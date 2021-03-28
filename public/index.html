@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<html>
+
+    <head>
+        <title>telleRITA - Alumni Assistance Voice-Enabled Application</title>
+        <script src="server.js"></script>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <body style="background-color: steelblue">
+        <h1 class="center" id="headline">
+            Rita
+        </h1>
+
+        <h2 class="center" id="subheading">
+            Alumni Assistance Voice-Enabled Application
+        </h2>
+
+        <div id="info">
+            <p id="info_start">Click on the microphone icon and begin speaking.</p>
+            <p id="info_speak_now">Speak now.</p>
+            <p id="info_no_speech">No speech was detected. You may need to adjust your
+                <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
+                microphone settings</a>.
+            </p>
+            <p id="info_no_microphone" style="display:none">
+                No microphone was found. Ensure that a microphone is installed and that
+                <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
+                microphone settings</a> are configured correctly.
+            </p>
+            <p id="info_allow">Click the "Allow" button above to enable your microphone.</p>
+            <p id="info_denied">Permission to use microphone was denied.</p>
+            <p id="info_blocked">
+                Permission to use your microphone has been blocked or denied. To change this,
+                go to chrome://settings/contentExceptions#media-stream
+            </p>
+            <p id="info_upgrade">
+                This app uses WebSpeech API, which may not be supported by this browser.
+                Please use the latest version of <a href="//www.google.com/chrome">Google Chrome</a>.
+            </p>
+        </div>
+
+        <div class="right">
+            <button id="mike_button" onclick="btnMike()">
+                <img id="mike_img" src="images/mic.png" alt="Start">
+            </button>
+        </div>
+
+        <div id="results">
+            <span id="final_span" class="final"></span>
+            <span id="current_span" class="interim"></span>
+            <p>
+        </div>
+
+        <div id="replies">
+            <span id="speech_reply" class="reply"></span>
+            <p>
+        </div>
+
+    </body>
+</html>
+
+<script>
+
+    const defaultVoice = 28;
+    const welcomeStatement = "Welcome to Rita, your voice-enabled assistant. I can help you find information on your course."
+    const requestStudentNumber = "First, you must identify yourself. Please state your student number";
+    const requestContinuation = "Is there anything else I can help you with?"
+
+    var final_transcript = '';
+    var recognizing = false;
+    var ignore_onend;
+    var start_timestamp;
+    var two_line = /\n\n/g;
+    var one_line = /\n/g;
+    var auto_reply = ""
+    var full_transcript = '';
+    var speech = window.speechSynthesis;
+
+    // Variables used for the speech interaction flow
+    var currentMood = 0; // 0 to 5
+    var moodReplyMisunderstood =
+        [
+            "I'm afraid I didn't get that.",
+            "Can you please repeat?",
+            "I'm still not understanding.",
+            "Please talk in a louder and clearer voice.",
+            "It's not happening for us.",
+            "I guess there's no point in carrying on."
+        ];
+    var isTalking = false;
+    var speechProcessed = false;
+    var flowStatus = 0;
+    var studentRecognised = false;
+    var speechValue = "";
+    var studentNumber = "";
+    var studentName = "";
+    var studentRequest = "";
+
+    displayStuff('info_start');
+
+    function utterSpeech (textToUtter = "", voiceIndex = defaultVoice)
+    {
+        var utterThis = new SpeechSynthesisUtterance(textToUtter.valueOf());
+        var voices = speech.getVoices();
+        utterThis.voice = voices[voiceIndex];
+
+        isTalking = true;
+        speech.speak (utterThis);
+        appendTranscript(textToUtter, true);
+        isTalking = false;
+    }
+
+    function appendTranscript(speechToAdd = "", isReply = false)
+    {
+        if (isReply)
+        {
+            document.getElementById('speech_reply').innerHTML
+                += "<b>" + linebreak(capitalise(speechToAdd)) + "</b><br>";
+        }
+        else
+        {
+            document.getElementById('speech_reply').innerHTML
+                += linebreak(capitalise(speechToAdd)) + "<br>";
+        }
+    }
+
+    function setFlowStatus(_flowStatus = 0)
+    {
+        flowStatus = _flowStatus;
+        sessionStorage.setItem('flowStatus', flowStatus.toString());
+    }
+
+    function setNextMood(resetMood = false)
+    {
+        if (resetMood)
+        {
+            this.currentMood = 0;
+        }
+        else if (this.currentMood >= this.moodReplyMisunderstood.length)
+        {
+            this.currentMood = this.moodReplyMisunderstood.length;
+        }
+        else
+        {
+            this.currentMood++;
+        }
+    }
+
+    function linebreak(s) 
+    {
+        return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+    }
+
+    var first_char = /\S/;
+
+    function capitalise(s)
+    {
+        return s.replace(first_char, function(m) { return m.toUpperCase(); });
+    }
+
+    if (!('webkitSpeechRecognition' in window)) 
+    {
+        upgrade();
+    } 
+    else 
+    {
+        mike_button.style.display = 'inline-block';
+        var recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = function() 
+        {
+            recognizing = true;
+            displayStuff('info_speak_now');
+            mike_img.src = 'images/mic-animate.gif';
+        };
+
+        recognition.onerror = function(event) 
+        {
+            if (event.error == 'audio-capture')
+            {
+                mike_img.src = 'images/mic.png';
+                displayStuff('info_no_microphone');
+                ignore_onend = true;
+            }
+
+            if (event.error == 'not-allowed') 
+            {
+                if (event.timeStamp - start_timestamp < 100) 
+                {
+                    displayStuff('info_blocked');
+                } 
+                else 
+                {
+                    displayStuff('info_denied');
+                }
+                ignore_onend = true;
+            }
+        };
+
+        recognition.onend = function() 
+        {
+            recognizing = false;
+            if (ignore_onend) 
+            {
+                return;
+            }
+
+            mike_img.src = 'images/mic.png';
+
+            if (!final_transcript) 
+            {
+                displayStuff('info_start');
+                return;
+            }
+
+            displayStuff('');
+
+            if (window.getSelection) 
+            {
+                window.getSelection().removeAllRanges();
+                var range = document.createRange();
+                range.selectNode(document.getElementById('final_span'));
+                window.getSelection().addRange(range);
+            }
+        };
+
+        /*
+        Main function containing the logic controlling the speech flow
+        following speech recognition
+         */
+        recognition.onresult = function(event)
+        {
+            var interim_transcript = '';
+
+            for (var i = event.resultIndex; i < event.results.length; ++i)
+            {
+                if (event.results[i].isFinal)
+                {
+                    speechProcessed = false;
+                    final_transcript += event.results[i][0].transcript;
+                    speechValue = event.results[i][0].transcript.trim();
+
+                    switch (flowStatus)
+                    {
+                        case 0: // identify student number
+                            studentNumber = speechValue;
+                            if (!isTalking)
+                            {
+                                isTalking = true;
+                                utterSpeech (studentNumber, defaultVoice);
+                            }
+                            isTalking = false;
+
+                            if (!isTalking)
+                            {
+                                isTalking = true;
+                                utterSpeech ('Please state your name', defaultVoice);
+                            }
+
+                            isTalking = false;
+
+                            setFlowStatus(1);
+
+                            speechProcessed = true;
+
+                            break;
+
+                        case 1: // identify student name
+                            studentName = speechValue;
+
+                            //Set up AJAX request
+                            var xhttp = new XMLHttpRequest();
+                            xhttp.open("GET", "checkStudent?studentNumber=" + studentNumber
+                                + "&studentName=" + studentName, true);
+                            xhttp.send();
+
+                            xhttp.onreadystatechange=(e)=>
+                            {
+                                if ((xhttp.readyState == 4) && (xhttp.status == 200))
+                                {
+                                    var resp = xhttp.responseText;
+                                    if (resp == "false")
+                                    {
+                                        sessionStorage.setItem('studentNumber', '');
+                                        utterSpeech('Please identify yourself again.', defaultVoice);
+                                        setFlowStatus (0);
+                                    }
+                                    else if (resp == "true")
+                                    {
+                                        sessionStorage.setItem('studentNumber', studentNumber);
+
+                                        // Greet student according to the time of day
+                                        var nowHour = new Date().getHours();
+                                        var greetStu = "";
+                                        if (nowHour < 12)
+                                        {
+                                            greetStu = "Good morning ";
+                                        }
+                                        else
+                                            if ((nowHour >= 12) && (nowHour < 18))
+                                            {
+                                                greetStu = "Good afternoon ";
+                                            }
+                                            else
+                                                if (nowHour >= 18)
+                                                {
+                                                    greetStu = "Good evening ";
+                                                }
+
+                                        utterSpeech(greetStu + studentName + ". How may I help you?", defaultVoice);
+                                        setFlowStatus (2);
+                                        //Reset current mood value
+                                        setNextMood(true);
+                                    }
+                                }
+                            }
+
+                            speechProcessed = true;
+
+                            break;
+
+                        case 2: // identify student request
+                            studentRequest = speechValue;
+
+                            if (studentRequest.toLowerCase().includes("when"))
+                            {
+                                if (studentRequest.toLowerCase().includes("lecture"))
+                                //Student wants to know when their next lecture is
+                                {
+                                    //Reset current mood value
+                                    setNextMood(true);
+
+                                    //Set up AJAX request
+                                    var xhttp = new XMLHttpRequest();
+                                    xhttp.open("GET", "nextLecture?studentNumber=" + studentNumber, true);
+                                    xhttp.send();
+
+                                    xhttp.onreadystatechange=(e)=>
+                                    {
+                                        if ((xhttp.readyState == 4) && (xhttp.status == 200))
+                                        {
+                                            var resp = xhttp.responseText;
+                                            setFlowStatus (2);
+                                            if (resp.valueOf().length > 1)
+                                            {
+                                                sessionStorage.setItem('response', resp);
+                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice);
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (studentRequest.toLowerCase().includes("assignment"))
+                                //Student wants to know when their next assignment deadline is
+                                {
+                                    //Reset current mood value
+                                    setNextMood(true);
+
+                                    //Set up AJAX request
+                                    var xhttp = new XMLHttpRequest();
+                                    xhttp.open("GET", "nextAssignmentDeadline?studentNumber=" + studentNumber + "&moduleName=all", true);
+                                    xhttp.send();
+
+                                    xhttp.onreadystatechange=(e)=>
+                                    {
+                                        if ((xhttp.readyState == 4) && (xhttp.status == 200))
+                                        {
+                                            var resp = xhttp.responseText;
+                                            setFlowStatus (2);
+                                            if (resp.valueOf().length > 1)
+                                            {
+                                                sessionStorage.setItem('response', resp);
+                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice);
+                                            }
+                                        }
+                                    }
+                                }
+                                else // Request was not recognised
+                                {
+                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice);
+                                    utterSpeech(requestContinuation);
+                                    setNextMood(false);
+                                }
+                            }
+                            else if (studentRequest.toLowerCase().includes("where"))
+                            {
+                                if ((studentRequest.toLowerCase().includes("lecture")) || (studentRequest.toLowerCase().includes("room")))
+                                //Student wants to know where their next lecture is being held
+                                {
+                                    //Reset current mood value
+                                    setNextMood(true);
+
+                                    //Set up AJAX request
+                                    var xhttp = new XMLHttpRequest();
+                                    xhttp.open("GET", "nextLectureRoom?studentNumber=" + studentNumber, true);
+                                    xhttp.send();
+
+                                    xhttp.onreadystatechange=(e)=>
+                                    {
+                                        if ((xhttp.readyState == 4) && (xhttp.status == 200))
+                                        {
+                                            var resp = xhttp.responseText;
+                                            setFlowStatus (2);
+                                            if (resp.valueOf().length > 1)
+                                            {
+                                                sessionStorage.setItem('response', resp);
+                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice);
+                                            }
+                                        }
+                                    }
+                                }
+                                else // Request was not recognised
+                                {
+                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice);
+                                    utterSpeech(requestContinuation);
+                                    setNextMood(false);
+                                }
+                            }
+                            else if (((studentRequest.toLowerCase().includes("thank"))
+                                && (studentRequest.toLowerCase().includes("you")))
+                                || (studentRequest.toLowerCase().includes("no")))
+                            {
+                                //Reset current mood value
+                                setNextMood(true);
+
+                                utterSpeech("You're welcome.");
+                                btnMike();
+                            }
+                            else // Request was not recognised
+                            {
+                                utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice);
+                                utterSpeech(requestContinuation);
+                                setNextMood(false);
+                            }
+
+                            speechProcessed = true;
+
+                            break;
+
+                        default:
+                    }
+
+                    full_transcript += final_transcript + "<br>" + auto_reply;
+                    speech_reply.innerHTML = full_transcript;
+
+                    speechValue = '';
+                    auto_reply = '';
+                    final_transcript = '';
+                }
+                else
+                {
+                    interim_transcript += event.results[i][0].transcript;
+                }
+            }
+
+            final_transcript = capitalise(final_transcript);
+            final_span.innerHTML = linebreak(final_transcript);
+            current_span.innerHTML = linebreak(interim_transcript);
+        };
+    }
+
+    function upgrade() 
+    {
+        mike_button.style.visibility = 'hidden';
+        displayStuff('info_upgrade');
+    }
+
+    function btnMike(event)
+    {
+
+        if (recognizing) 
+        {
+            recognition.stop();
+            return;
+        }
+
+        studentRecognised = false;
+
+        //identify student number
+        if (flowStatus != 2)
+        {
+            utterSpeech(welcomeStatement, defaultVoice);
+            utterSpeech (requestStudentNumber, defaultVoice);
+        }
+        else
+        {
+            if (studentName.trim().length > 0)
+            {
+                utterSpeech ('Hi ' + studentName + '. How may I help you?', defaultVoice);
+                setFlowStatus (2);
+                //Reset current mood value
+                setNextMood(true);
+            }
+            else
+            {
+                setFlowStatus(0);
+                setNextMood(true);
+            }
+        }
+
+        final_transcript = '';
+        recognition.language = 'en-GB'
+        recognition.start();
+
+        ignore_onend = false;
+
+        document.getElementById('final_span').innerHTML = '';
+        document.getElementById('current_span').innerHTML = '';
+        mike_img.src = 'images/mic-slash.gif';
+        displayStuff('info_allow');
+        start_timestamp = event.timeStamp;
+
+    }
+
+    function displayStuff(s)
+    {
+        if (s) 
+        {
+            for (var child = info.firstChild; child; child = child.nextSibling) 
+            {
+                if (child.style) 
+                {
+                    child.style.display = child.id == s ? 'inline' : 'none';
+                }
+            }
+            info.style.visibility = 'visible';
+        } 
+        else 
+        {
+            info.style.visibility = 'hidden';
+        }
+    }
+
+</script>

@@ -68,8 +68,7 @@ app.get('/nextLecture', function(request, response) {
             }
             else
             {
-                resp = "Your next lecture is on "
-                    + JSON.stringify(data).substr(14, JSON.stringify(data).length - 17);
+                resp = JSON.stringify(data).substr(14, JSON.stringify(data).length - 17);
             }
 
             console.log ("Response: <" + resp + '>');
@@ -149,8 +148,7 @@ app.get('/nextAssignmentDeadline', function(request, response) {
             }
             else
             {
-                resp = "Your next assignment deadline is on  "
-                    + JSON.stringify(data).substr(14, JSON.stringify(data).length - 17);
+                resp = JSON.stringify(data).substr(14, JSON.stringify(data).length - 17);
             }
 
             console.log ("Response: <" + resp + '>');
@@ -238,10 +236,13 @@ Attempts to retrieve the student's next lecture
 function nextLecture (studentNumber, callback)
 {
 
-    var sql = "SELECT CONCAT(CAST(DAYOFMONTH(SC.sch_start) AS CHAR(2)), ' ', " +
+    var sql = "SELECT CONCAT('Your next lecture is on ', + " +
+        "CAST(DAYOFMONTH(SC.sch_start) AS CHAR(2)), ' ', " +
         "MONTHNAME(SC.sch_start), ' ', YEAR(SC.sch_start), ' at ', " +
-        "HOUR(TIME(SC.sch_start)), ' hundred') AS response " +
+        "HOUR(TIME(SC.sch_start)), ' hundred, delivered by ', L.lec_firstname, +" +
+        "' ', L.lec_lastname, '. It relates to ', M.mod_name, '.') AS response " +
         "FROM Schedule SC " +
+        "INNER JOIN Lecturer L ON SC.sch_lec_FK = L.lec_ID " +
         "INNER JOIN Module M on SC.sch_mod_FK = M.mod_ID " +
         "INNER JOIN Enrollment EN ON EN.enr_mod_FK = M.mod_ID " +
         "INNER JOIN Student ST ON EN.enr_stu_FK = ST.stu_ID " +
@@ -370,7 +371,8 @@ function nextAssignmentDeadline (studentNumber, moduleName, callback)
 
     if ((moduleName.toString().toLowerCase() == "all") || (moduleName.toString().trim().length = 0))
     {
-        sql = "SELECT CONCAT(CAST(DAYOFMONTH(A.asm_deadline) AS CHAR(2)), ' ', " +
+        sql = "SELECT CONCAT('Your next ', M.mod_name, ' assignment deadline falls on ', " +
+            "CAST(DAYOFMONTH(A.asm_deadline) AS CHAR(2)), ' ', " +
             "MONTHNAME(asm_deadline), ' ', YEAR(asm_deadline), ' at ', " +
             "HOUR(TIME(asm_deadline)), ' ', MINUTE(TIME(asm_deadline)), ' ', " +
             "SECOND(TIME(asm_deadline))) AS response " +
@@ -383,7 +385,8 @@ function nextAssignmentDeadline (studentNumber, moduleName, callback)
     }
     else
     {
-        sql = "SELECT CONCAT(CAST(DAYOFMONTH(A.asm_deadline) AS CHAR(2)), ' ', " +
+        sql = "SELECT CONCAT('Your next ', M.mod_name, ' assignment deadline falls on ', " +
+            "CAST(DAYOFMONTH(A.asm_deadline) AS CHAR(2)), ' ', " +
             "MONTHNAME(asm_deadline), ' ', YEAR(asm_deadline), ' at ', " +
             "HOUR(TIME(asm_deadline)), ' ', MINUTE(TIME(asm_deadline)), ' ', " +
             "SECOND(TIME(asm_deadline))) AS response " +

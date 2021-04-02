@@ -108,6 +108,7 @@
         var utterThis = new SpeechSynthesisUtterance(textToUtter.valueOf());
         var voices = speech.getVoices();
         utterThis.voice = voices[voiceIndex];
+        utterThis.lang = 'en-GB';
 
         isTalking = true;
         speech.speak (utterThis);

@@ -331,7 +331,7 @@
                         case 2: // identify student request
                             studentRequest = speechValue;
 
-                            if (studentRequest.toLowerCase().includes("when"))
+                            if ((studentRequest.toLowerCase().includes("when")) || (studentRequest.toLowerCase().includes("next")))
                             {
                                 if (studentRequest.toLowerCase().includes("lecture"))
                                 //Student wants to know when their next lecture is
@@ -432,6 +432,13 @@
                                 setNextMood(true);
 
                                 utterSpeech("You're welcome.");
+
+                                //Reset session values and variables
+                                sessionStorage.setItem('studentNumber', '');
+                                studentNumber = "";
+                                studentName = "";
+                                setFlowStatus(0);
+
                                 btnMike();
                             }
                             else // Request was not recognised

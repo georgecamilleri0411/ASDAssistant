@@ -104,7 +104,7 @@
 
     displayStuff('info_start');
 
-    function utterSpeech (textToUtter = "", voiceIndex = defaultVoice)
+    function utterSpeech (textToUtter = "", voiceIndex = defaultVoice, isReply = false)
     {
         var utterThis = new SpeechSynthesisUtterance(textToUtter.valueOf());
         var voices = speech.getVoices();
@@ -113,7 +113,7 @@
 
         isTalking = true;
         speech.speak (utterThis);
-        appendTranscript(textToUtter, true);
+        appendTranscript(textToUtter, isReply);
         isTalking = false;
     }
 
@@ -129,6 +129,11 @@
             document.getElementById('speech_reply').innerHTML
                 += linebreak(capitalise(speechToAdd)) + "<br>";
         }
+    }
+
+    function clearTranscript()
+    {
+        document.getElementById('speech_reply').innerHTML = "";
     }
 
     function setFlowStatus(_flowStatus = 0)
@@ -249,6 +254,8 @@
                     final_transcript += event.results[i][0].transcript;
                     speechValue = event.results[i][0].transcript.trim();
 
+                    appendTranscript(speechValue, false);
+
                     switch (flowStatus)
                     {
                         case 0: // identify student number
@@ -256,14 +263,13 @@
                             if (!isTalking)
                             {
                                 isTalking = true;
-                                utterSpeech (studentNumber, defaultVoice);
                             }
                             isTalking = false;
 
                             if (!isTalking)
                             {
                                 isTalking = true;
-                                utterSpeech ('Please state your name', defaultVoice);
+                                utterSpeech ('Please state your name', defaultVoice, true);
                             }
 
                             isTalking = false;
@@ -291,7 +297,7 @@
                                     if (resp == "false")
                                     {
                                         sessionStorage.setItem('studentNumber', '');
-                                        utterSpeech('Please identify yourself again.', defaultVoice);
+                                        utterSpeech('Please identify yourself again.', defaultVoice, true);
                                         setFlowStatus (0);
                                     }
                                     else if (resp == "true")
@@ -316,7 +322,7 @@
                                                     greetStu = "Good evening ";
                                                 }
 
-                                        utterSpeech(greetStu + studentName + ". How may I help you?", defaultVoice);
+                                        utterSpeech(greetStu + studentName + ". How may I help you?", defaultVoice, true);
                                         setFlowStatus (2);
                                         //Reset current mood value
                                         setNextMood(true);
@@ -353,7 +359,7 @@
                                             if (resp.valueOf().length > 1)
                                             {
                                                 sessionStorage.setItem('response', resp);
-                                                utterSpeech(resp + ' ' + requestContinuation, defaultVoice);
+                                                utterSpeech(resp + ' ' + requestContinuation, defaultVoice, true);
                                             }
                                         }
                                     }
@@ -378,15 +384,14 @@
                                             if (resp.valueOf().length > 1)
                                             {
                                                 sessionStorage.setItem('response', resp);
-                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice);
+                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice, true);
                                             }
                                         }
                                     }
                                 }
                                 else // Request was not recognised
                                 {
-                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice);
-                                    utterSpeech(requestContinuation);
+                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice, true);
                                     setNextMood(false);
                                 }
                             }
@@ -412,15 +417,14 @@
                                             if (resp.valueOf().length > 1)
                                             {
                                                 sessionStorage.setItem('response', resp);
-                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice);
+                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice, true);
                                             }
                                         }
                                     }
                                 }
                                 else // Request was not recognised
                                 {
-                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice);
-                                    utterSpeech(requestContinuation);
+                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice, true);
                                     setNextMood(false);
                                 }
                             }
@@ -430,21 +434,20 @@
                             {
                                 //Reset current mood value
                                 setNextMood(true);
+                                utterSpeech("You're welcome.", defaultVoice, true);
 
-                                utterSpeech("You're welcome.");
-
-                                //Reset session values and variables
+                                //Reset session values and variables and clear the transcript
                                 sessionStorage.setItem('studentNumber', '');
                                 studentNumber = "";
                                 studentName = "";
+                                clearTranscript();
                                 setFlowStatus(0);
 
                                 btnMike();
                             }
                             else // Request was not recognised
                             {
-                                utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice);
-                                utterSpeech(requestContinuation);
+                                utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice, true);
                                 setNextMood(false);
                             }
 
@@ -456,7 +459,7 @@
                     }
 
                     full_transcript += final_transcript + "<br>" + auto_reply;
-                    speech_reply.innerHTML = full_transcript;
+                    //speech_reply.innerHTML = full_transcript;
 
                     speechValue = '';
                     auto_reply = '';
@@ -494,14 +497,14 @@
         //identify student number
         if (flowStatus != 2)
         {
-            utterSpeech(welcomeStatement, defaultVoice);
-            utterSpeech (requestStudentNumber, defaultVoice);
+            utterSpeech(welcomeStatement, defaultVoice, true);
+            utterSpeech (requestStudentNumber, defaultVoice, true);
         }
         else
         {
             if (studentName.trim().length > 0)
             {
-                utterSpeech ('Hi ' + studentName + '. How may I help you?', defaultVoice);
+                utterSpeech ('Hi ' + studentName + '. How may I help you?', defaultVoice, true);
                 setFlowStatus (2);
                 //Reset current mood value
                 setNextMood(true);

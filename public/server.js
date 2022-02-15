@@ -4,6 +4,8 @@ const qrcode = require('qrcode-terminal');
 const { Client } = require('whatsapp-web.js');
 const SAVED_SESSION = './saved_session.json';
 
+let readyState = false;
+
 // Load saved session (if it exists)
 let sessionData;
 if(fs.existsSync(SAVED_SESSION)) {
@@ -14,13 +16,6 @@ const client = new Client({
     session: sessionData // saved session object
 })
 
-/*
-const client = new Client({
-    puppeteer: {
-        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    }
-})
-*/
 
 // Save session
 client.on('authenticated', (session) => {
@@ -39,7 +34,9 @@ client.on('qr', qr => {
 
 // Display message when authenticated
 client.on('ready', () => {
+    readyState = true;
     console.log('Client is ready!');
+    sendMessage("35679968966","Aloha!");
 });
 
 client.initialize();
@@ -53,23 +50,15 @@ client.on('message', message => {
 client.on('message', message => {
     if(message.body === '!ping') {
         message.reply('pong');
-//        message.to ('35679968966');
-//        message.body('Test1234');
     }
 });
 
-// Send message.
-contactList = client.getContacts();
-contact = client.getContactById('Vanessa Camilleri');
-console.log (contact.name);
-//client.sendMessage("79968966", "Test ad hoc message.");
-
-//function sendMessage (messageTo, messageBody) {
-//    if (messageBody.toString().trim().length > 0) {
-//        const contactList = /*await*/ client.getContacts();
-//        const contact = contactList.find(({ name }) => name === messageTo);
-//        const { id: { _serialized: chatId } } = contact;
-//        /*await*/ client.sendMessage((chatId, messageBody.toString()));
-//    }
-//}
+// Send message
+function sendMessage (messageTo, messageBody)
+{
+    if (messageBody.toString().trim().length > 0) {
+        chatID = messageTo.toString().trim() + "@c.us";
+        client.sendMessage(chatID, messageBody.toString());
+    }
+}
 

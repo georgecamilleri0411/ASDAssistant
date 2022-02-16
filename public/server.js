@@ -1,8 +1,5 @@
+// File system API. Used to access JSON files
 const fs = require('fs');
-const qrcode = require('qrcode-terminal');
-
-const { Client } = require('whatsapp-web.js');
-const SAVED_SESSION = './saved_session.json';
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -10,28 +7,33 @@ var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
+/* ****************
+ * WhatsApp stuff *
+*******************/
+
+const qrcode = require('qrcode-terminal');
+const { Client } = require('whatsapp-web.js');
+const SAVED_SESSION = './saved_session.json';
+
 //Set up express to serve static files from the public folder
 app.use (express.static ('public'));
 
-//Start listening on port 8100
-app.listen (8881);
-
-// ------------------------------------------------------------------------------------------------
-
+// WhatsApp status flag
 let readyState = false;
 
-// Load saved session (if it exists)
+// Load WhatsApp saved session (if it exists)
 let sessionData;
-if(fs.existsSync(SAVED_SESSION)) {
+if(fs.existsSync(SAVED_SESSION))
+{
     sessionData = require(SAVED_SESSION);
 }
 
+// Set up WhatsApp client
 const client = new Client({
     session: sessionData // saved session object
 })
 
-
-// Save session
+// Save WhatsApp session
 client.on ('authenticated', (session) => {
     sessionData = session;
     fs.writeFile (SAVED_SESSION, JSON.stringify(session), (err) => {
@@ -41,30 +43,57 @@ client.on ('authenticated', (session) => {
     });
 });
 
-// Generate QR code to authenticate this device, if required
+// Generate QR code to authenticate this device to the WhatsApp account, if required
 client.on ('qr', qr => {
     qrcode.generate(qr, {small: true});
 });
 
-// Display message when authenticated
-client.on ('ready', () => {
-    readyState = true;
-    console.log('Client is ready!');
-});
-
+// Initialise the WhatsApp client
 client.initialize();
 
-// Listen for messages
-client.on ('message', message => {
-    console.log(message.body);
+/* *************
+ * Email stuff *
+****************/
+
+var nodeMailer = require('nodemailer');
+
+//Start listening on port 8881
+app.listen (8881);
+
+// ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests in relation to WhatsApp messaging
+app.get('/sendWAMessage', function(request, response)
+{
+
+    var waNumber = request.query['waNumber'] || '';
+    var waText = request.query['waText'] || '';
+
+    // Display message when authenticated
+    client.on ('ready', () => {
+        readyState = true;
+        //console.log('Client is ready!');
+        sendMessage (waNumber, waText);
+    });
+
+//    client.initialize();
+
+    /*
+    // Listen for messages - TEST ONLY
+    client.on ('message', message => {
+        console.log(message.body);
+    });
+
+    // Reply to message
+    client.on ('message', message => {
+        if(message.body === '!ping') {
+            message.reply('pong');
+        }
+    });
+    */
+
 });
 
-// Reply to message
-client.on ('message', message => {
-    if(message.body === '!ping') {
-        message.reply('pong');
-    }
-});
+// ------------------------------------------------------------------------------------------------
 
 // Send message
 function sendMessage (messageTo, messageBody)
@@ -77,30 +106,41 @@ function sendMessage (messageTo, messageBody)
 }
 
 // ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests sent in relation to email messaging
+app.get('/sendEmailMessage', function(request, response)
+{
 
-//Set up the application to handle GET requests
-app.get('/sendWAMessage', function(request, response) {
+    const emailService = 'gmail';
+    const emailUser = 'ASDAssistantAlertEngine@gmail.com';
+    const emailPwd = 'M00691035';
 
-    var waNumber = request.query['waNumber'] || '';
-    var waText = request.query['waText'] || '';
+    var eTo = request.query['eTo'] || '';
+    var eSubject = request.query['eSubject'] || '';
+    var eBody = request.query['eBody'] || '';
 
-    sendWAMessage (waNumber, waText, function (err, data)
-    {
-        if (err)
-        {
-            console.log ("Error: ", err);
-
-            response.status(200);
-            response.setHeader('Content-type', 'text/html');
-            return response.send(false);
+    var emailTransporter = nodeMailer.createTransport ({
+        service: 'gmail',
+        auth: {
+            user: 'ASDAssistantAlertEngine@gmail.com',
+            pass: 'M00691035'
         }
-        else
-        {
-            sendMessage(waNumber, waText);
+    });
 
-            response.status(200);
-            response.setHeader('Content-type', 'text/html');
-            return response.send(data);
+    var emailMessage = {
+        from: emailUser,
+        to: eTo,
+        subject: eSubject,
+        text: eBody
+    };
+
+    emailTransporter.sendMail (emailMessage, function (error, info) {
+        if (error) {
+            console.log (error);
+            console.log ('To: ' + eTo);
+            console.log ('Subject: ' + eSubject);
+            console.log ('Body: ' + eBody);
+        } else {
+            console.log ('Email sent: ' + info.response);
         }
     });
 

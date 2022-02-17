@@ -18,8 +18,9 @@ const SAVED_SESSION = './saved_session.json';
 //Set up express to serve static files from the public folder
 app.use (express.static ('public'));
 
-// WhatsApp status flag
+// WhatsApp status flags
 let readyState = false;
+let messageSent = false;
 
 // Load WhatsApp saved session (if it exists)
 let sessionData;
@@ -48,9 +49,6 @@ client.on ('qr', qr => {
     qrcode.generate(qr, {small: true});
 });
 
-// Initialise the WhatsApp client
-client.initialize();
-
 /* *************
  * Email stuff *
 ****************/
@@ -65,14 +63,35 @@ app.listen (8881);
 app.get('/sendWAMessage', function(request, response)
 {
 
+    // Initialise the WhatsApp client
+    client.initialize().then(r => function ()
+    {
+        console.log("client.initialize() - Promise Resolved");
+    }).catch(function ()
+    {
+        console.log("client.initialize() - Promise Rejected");
+    });
+
+    messageSent = false;
+
     var waNumber = request.query['waNumber'] || '';
     var waText = request.query['waText'] || '';
 
     // Display message when authenticated
     client.on ('ready', () => {
         readyState = true;
-        //console.log('Client is ready!');
-        sendMessage (waNumber, waText);
+        if (!messageSent)
+        {
+            sendMessage (waNumber, waText);
+        }
+    });
+
+    client.destroy().then(r => function ()
+    {
+        console.log("client.destroy() - Promise Resolved");
+    }).catch(function ()
+    {
+        console.log("client.destroy() - Promise Rejected");
     });
 
 //    client.initialize();
@@ -98,10 +117,19 @@ app.get('/sendWAMessage', function(request, response)
 // Send message
 function sendMessage (messageTo, messageBody)
 {
-    if (readyState && messageBody.toString().trim().length > 0) {
+    let chatID;
+    if (readyState && messageBody.toString().trim().length > 0)
+    {
         chatID = messageTo.toString().trim() + "@c.us";
-        client.sendMessage(chatID, messageBody.toString());
-        console.log ("Message sent to " + chatID + " (" + messageBody + ").");
+        client.sendMessage(chatID, messageBody.toString()).then(r => function ()
+        {
+            console.log("client.sendMessage(" + chatID + ", " + messageBody.toString() + " - Promise Resolved");
+        }).catch(function ()
+        {
+            console.log("client.sendMessage(" + chatID + ", " + messageBody.toString() + " - Promise Rejected");
+        });
+        console.log("Message sent to " + chatID + " (" + messageBody + ").");
+        messageSent = true;
     }
 }
 

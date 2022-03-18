@@ -12,7 +12,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 *******************/
 
 const qrcode = require('qrcode-terminal');
-const { Client } = require('whatsapp-web.js');
+const { Client, LegacySessionAuth } = require('whatsapp-web.js');
 const SAVED_SESSION = './saved_session.json';
 
 //Set up express to serve static files from the public folder
@@ -31,8 +31,10 @@ if(fs.existsSync(SAVED_SESSION))
 
 // Set up WhatsApp client
 const client = new Client({
-    session: sessionData // saved session object
-})
+    authStrategy: new LegacySessionAuth({
+        session: sessionData // saved session object
+    })
+});
 
 // Save WhatsApp session
 client.on ('authenticated', (session) => {
@@ -94,22 +96,6 @@ app.get('/sendWAMessage', function(request, response)
         console.log("client.destroy() - Promise Rejected");
     });
 
-//    client.initialize();
-
-    /*
-    // Listen for messages - TEST ONLY
-    client.on ('message', message => {
-        console.log(message.body);
-    });
-
-    // Reply to message
-    client.on ('message', message => {
-        if(message.body === '!ping') {
-            message.reply('pong');
-        }
-    });
-    */
-
 });
 
 // ------------------------------------------------------------------------------------------------
@@ -147,10 +133,13 @@ app.get('/sendEmailMessage', function(request, response)
     var eBody = request.query['eBody'] || '';
 
     var emailTransporter = nodeMailer.createTransport ({
-        service: 'gmail',
+        // service: 'gmail',
+        service: emailService,
         auth: {
-            user: 'ASDAssistantAlertEngine@gmail.com',
-            pass: 'M00691035'
+            //user: 'ASDAssistantAlertEngine@gmail.com',
+            //pass: 'M00691035'
+            user: emailUser,
+            pass: emailPwd
         }
     });
 
@@ -175,27 +164,47 @@ app.get('/sendEmailMessage', function(request, response)
 });
 
 // ------------------------------------------------------------------------------------------------
-
-//TEST
-app.get('/TEST', function(request, response)
+//Set up the application to handle GET requests sent in relation to logging sensor data
+app.get('/LogSensorData', function(request, response)
 {
 
-    var UserID = request.query['UserID'] || '';
+    var SensorID = request.query['SensorID'] || '';
+    var SensorValue = request.query['SensorValue'] || '';
+    var SensorTS = request.query['SensorTS'] || '';
 
-    test (UserID);
+    logSensorData (SensorID, SensorValue, SensorTS, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+            return response.send(false);
+        }
+        else
+        {
+            console.log ("Sensor data inserted at ID: [" + result + "]", result);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+            return response.send(result);
+        }
+    });
 
 });
 
 // ------------------------------------------------------------------------------------------------
 
-function test (UserID) {
+function logSensorData (SensorID, SensorValue, SensorTS, callback) {
 
     //Create a connection object
     var conn = mysql.createConnection({
         host: "localhost",
         user: "ASDuser",
         password: "letmein",
-        database: "ASD"
+        database: "ASD",
+        multipleStatements: true
     });
 
     //Open the connection
@@ -206,17 +215,22 @@ function test (UserID) {
         }
     );
 
-    conn.query ("SELECT Details FROM ASD.User WHERE U_UniqueID = ?", [UserID], function (err, result) {
+    //let sql = `SET @output = 0;CALL insertSensorReading(` + SensorID + `,'` + SensorValue + `', @output); SELECT @output`;
+    let sql = "SET @result = 0;CALL insertSensorReading(" + SensorID + ", '" + SensorValue + "', '" + SensorTS + "', @result); SELECT @result";
+    console.log (sql);
+
+    conn.query (sql, function (err, result) {
 
         if (err) {
+            callback (err, false);
             throw err;
             console.log (err); // Testing purposes
         } else {
             console.log (JSON.stringify(result));
+            callback(result,true);
         }
     });
 
     conn.end();
 
 }
-

@@ -1,6 +1,6 @@
 // Import the modules that this app depends on
 const fs = require('fs');
-var mysql = require('mysql');
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
@@ -173,50 +173,3 @@ app.get('/sendEmailMessage', function(request, response)
     });
 
 });
-
-// ------------------------------------------------------------------------------------------------
-
-//TEST
-app.get('/TEST', function(request, response)
-{
-
-    var UserID = request.query['UserID'] || '';
-
-    test (UserID);
-
-});
-
-// ------------------------------------------------------------------------------------------------
-
-function test (UserID) {
-
-    //Create a connection object
-    var conn = mysql.createConnection({
-        host: "localhost",
-        user: "ASDuser",
-        password: "letmein",
-        database: "ASD"
-    });
-
-    //Open the connection
-    conn.connect (
-        function(err) {
-            if (err) throw err;
-            if (err) console.log (err); // Testing purposes
-        }
-    );
-
-    conn.query ("SELECT Details FROM ASD.User WHERE U_UniqueID = ?", [UserID], function (err, result) {
-
-        if (err) {
-            throw err;
-            console.log (err); // Testing purposes
-        } else {
-            console.log (JSON.stringify(result));
-        }
-    });
-
-    conn.end();
-
-}
-

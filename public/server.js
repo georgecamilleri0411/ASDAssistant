@@ -195,7 +195,7 @@ app.get('/LogSensorData', function(request, response)
 });
 
 // ------------------------------------------------------------------------------------------------
-
+// Log sensor data in the MySQL Database
 function logSensorData (SensorID, SensorValue, SensorTS, callback) {
 
     //Create a connection object
@@ -215,7 +215,6 @@ function logSensorData (SensorID, SensorValue, SensorTS, callback) {
         }
     );
 
-    //let sql = `SET @output = 0;CALL insertSensorReading(` + SensorID + `,'` + SensorValue + `', @output); SELECT @output`;
     let sql = "SET @result = 0;CALL insertSensorReading(" + SensorID + ", '" + SensorValue + "', '" + SensorTS + "', @result); SELECT @result";
     console.log (sql);
 
@@ -234,3 +233,87 @@ function logSensorData (SensorID, SensorValue, SensorTS, callback) {
     conn.end();
 
 }
+
+// ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests sent in relation to TEST
+app.get('/Test', function(request, response)
+{
+
+    var UserID = request.query['UserID'] || '';
+
+    Test (UserID, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+            return response.send(false);
+        }
+        else
+        {
+            console.log ("User Details: ", result);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+            return response.send(result);
+        }
+    });
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Log sensor data in the MySQL Database
+function Test (UserID, callback) {
+
+    //Create a connection object
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "ASDuser",
+        password: "letmein",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            //if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
+    console.log (sql);
+
+    /*
+    conn.query (sql, [UserID], function (err, result) {
+
+        if (err) {
+            callback (err, false);
+            throw err;
+            console.log (err); // Testing purposes
+        } else {
+            console.log (JSON.stringify(result));
+            callback(result,true);
+        }
+    });
+    */
+
+    conn.query (sql, [UserID], function (err, result) {
+
+        if (err) {
+            console.log (err); // Testing purposes
+            callback (err, false);
+        } else {
+            console.log (JSON.stringify(result));
+            callback (null, result);
+        }
+    });
+
+    conn.end();
+
+}
+
+// ------------------------------------------------------------------------------------------------

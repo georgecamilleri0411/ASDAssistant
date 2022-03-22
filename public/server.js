@@ -165,14 +165,14 @@ app.get('/sendEmailMessage', function(request, response)
 
 // ------------------------------------------------------------------------------------------------
 //Set up the application to handle GET requests sent in relation to logging sensor data
-app.get('/LogSensorData', function(request, response)
+app.get('/LogSensorDataOLD', function(request, response)
 {
 
     var SensorID = request.query['SensorID'] || '';
     var SensorValue = request.query['SensorValue'] || '';
     var SensorTS = request.query['SensorTS'] || '';
 
-    logSensorData (SensorID, SensorValue, SensorTS, function (err, result)
+    logSensorDataOLD (SensorID, SensorValue, SensorTS, function (err, result)
     {
         if (err)
         {
@@ -196,7 +196,7 @@ app.get('/LogSensorData', function(request, response)
 
 // ------------------------------------------------------------------------------------------------
 // Log sensor data in the MySQL Database
-function logSensorData (SensorID, SensorValue, SensorTS, callback) {
+function logSensorDataOLD (SensorID, SensorValue, SensorTS, callback) {
 
     //Create a connection object
     var conn = mysql.createConnection({
@@ -226,7 +226,7 @@ function logSensorData (SensorID, SensorValue, SensorTS, callback) {
             console.log (err); // Testing purposes
         } else {
             console.log (JSON.stringify(result));
-            callback(result,true);
+            callback(null,result);
         }
     });
 
@@ -234,6 +234,77 @@ function logSensorData (SensorID, SensorValue, SensorTS, callback) {
 
 }
 
+// ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests sent in relation to logging sensor data
+app.get('/LogSensorData', function(request, response)
+{
+
+    var UserID = request.query['UserID'] || '';
+    var SensorType = request.query['SensorType'] || '';
+    var SensorValue = request.query['SensorValue'] || '';
+    var SensorTS = request.query['SensorTS'] || '';
+
+    logSensorData (UserID, SensorType, SensorValue, SensorTS, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+            return response.send(false);
+        }
+        else
+        {
+            console.log ("Sensor data inserted at ID: [" + result + "]", result);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+            return response.send(result);
+        }
+    });
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Log sensor data in the MySQL Database
+function logSensorData (UserID, SensorType, SensorValue, SensorTS, callback) {
+
+    //Create a connection object
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "ASDuser",
+        password: "letmein",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    let sql = "SET @result = 0;CALL insertSensorReadingNEW(" + UserID + ", '" + SensorType + "', '" + SensorValue + "', '" + SensorTS + "', @result); SELECT @result";
+    console.log (sql);
+
+    conn.query (sql, function (err, result) {
+
+        if (err) {
+            callback (err, false);
+            throw err;
+            console.log (err); // Testing purposes
+        } else {
+            console.log (JSON.stringify(result));
+            callback(null,result);
+        }
+    });
+
+    conn.end();
+
+}
 // ------------------------------------------------------------------------------------------------
 //Set up the application to handle GET requests sent in relation to TEST
 app.get('/Test', function(request, response)
@@ -253,7 +324,7 @@ app.get('/Test', function(request, response)
         }
         else
         {
-            console.log ("User Details: ", result);
+            console.log (result);
 
             response.status(200);
             response.setHeader('Content-type', 'text/html');
@@ -285,7 +356,6 @@ function Test (UserID, callback) {
     );
 
     let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
-    console.log (sql);
 
     /*
     conn.query (sql, [UserID], function (err, result) {
@@ -307,7 +377,7 @@ function Test (UserID, callback) {
             console.log (err); // Testing purposes
             callback (err, false);
         } else {
-            console.log (JSON.stringify(result));
+            //console.log (JSON.stringify(result));
             callback (null, result);
         }
     });

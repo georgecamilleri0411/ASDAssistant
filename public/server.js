@@ -1,5 +1,17 @@
 // Import the modules that this app depends on
 const fs = require('fs');
+
+// HTTP Stuff
+const http = require('http');
+const portNum = 8881 //process.env.PORT || 8881;
+
+// HTTPS Stuff
+const https = require('https');
+const options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+};
+
 var mysql = require('mysql');
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -57,8 +69,19 @@ client.on ('qr', qr => {
 
 var nodeMailer = require('nodemailer');
 
-//Start listening on port 8881
+//Launch app
+//HTTP
 app.listen (8881);
+
+
+//HTTPS
+/*
+https.createServer(options, function (req, res) {
+    res.writeHead(200);
+    console.log ("working ...");
+    res.end("working ...");
+}).listen(8881);
+*/
 
 // ------------------------------------------------------------------------------------------------
 //Set up the application to handle GET requests in relation to WhatsApp messaging
@@ -273,8 +296,8 @@ function logSensorData (UserID, SensorType, SensorValue, SensorTS, callback) {
     //Create a connection object
     var conn = mysql.createConnection({
         host: "localhost",
-        user: "ASDuser",
-        password: "letmein",
+        user: "root",
+        password: "eric!!cantona7",
         database: "ASD",
         multipleStatements: true
     });
@@ -320,6 +343,7 @@ app.get('/Test', function(request, response)
 
             response.status(200);
             response.setHeader('Content-type', 'text/html');
+
             return response.send(false);
         }
         else
@@ -328,6 +352,10 @@ app.get('/Test', function(request, response)
 
             response.status(200);
             response.setHeader('Content-type', 'text/html');
+            response.setHeader('Access-Control-Allow-Origin', '*');
+            response.setHeader('Access-Control-Allow-Methods', '*');
+            response.setHeader('Access-Control-Allow-Headers', '*');
+
             return response.send(result);
         }
     });
@@ -341,8 +369,8 @@ function Test (UserID, callback) {
     //Create a connection object
     var conn = mysql.createConnection({
         host: "localhost",
-        user: "ASDuser",
-        password: "letmein",
+        user: "root",
+        password: "eric!!cantona7",
         database: "ASD",
         multipleStatements: true
     });

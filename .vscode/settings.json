@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/3d60e131-9b8e-4d9b-aea7-2b2189c35ac7/resourceGroups/asdassistant/providers/Microsoft.Web/sites/ASDassistant",
+    "appService.deploySubpath": "."
+}

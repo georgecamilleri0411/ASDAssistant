@@ -5,13 +5,6 @@ const fs = require('fs');
 const http = require('http');
 const portNum = 8881 //process.env.PORT || 8881;
 
-// HTTPS Stuff
-const https = require('https');
-const options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
-};
-
 var mysql = require('mysql');
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -71,11 +64,16 @@ var nodeMailer = require('nodemailer');
 
 //Launch app
 //HTTP
-app.listen (8881);
-
+app.listen (portNum);
 
 //HTTPS
 /*
+const https = require('https');
+const options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+};
+
 https.createServer(options, function (req, res) {
     res.writeHead(200);
     console.log ("working ...");
@@ -352,7 +350,8 @@ app.get('/Test', function(request, response)
 
             response.status(200);
             response.setHeader('Content-type', 'text/html');
-            response.setHeader('Access-Control-Allow-Origin', '*');
+            response.setHeader('Access-Control-Allow-Origin', '192.168.4.37'); // Smartphone IP
+            response.setHeader('Access-Control-Allow-Origin', '192.168.4.90'); // Smartwatch IP
             response.setHeader('Access-Control-Allow-Methods', '*');
             response.setHeader('Access-Control-Allow-Headers', '*');
 
@@ -367,6 +366,18 @@ app.get('/Test', function(request, response)
 function Test (UserID, callback) {
 
     //Create a connection object
+
+    // MySQL server on Azure
+    var conn = mysql.createConnection({
+        host: "asddataserver.mysql.database.azure.com",
+        user: "asduser@asddataserver",
+        password: "Eric!!Cantona7",
+        database: "asd",
+        port: 3306
+    });
+
+    /*
+    // MySQL server on localhost
     var conn = mysql.createConnection({
         host: "localhost",
         user: "root",
@@ -374,6 +385,7 @@ function Test (UserID, callback) {
         database: "ASD",
         multipleStatements: true
     });
+     */
 
     //Open the connection
     conn.connect (

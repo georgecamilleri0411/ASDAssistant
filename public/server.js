@@ -64,12 +64,17 @@ var nodeMailer = require('nodemailer');
 
 //Launch app
 //HTTP
+/*
 http.createServer(function (req, res) {
     res.writeHead(200, {'Content-Type': 'text/html'});
     res.write('Hello World!');
     res.end();
 }).listen(portNum);
-//app.listen (portNum);
+*/
+
+app.listen (portNum, () => {
+    console.log ("ASDAssist server running on port " + portNum);
+});
 
 //HTTPS
 /*
@@ -332,13 +337,15 @@ function logSensorData (UserID, SensorType, SensorValue, SensorTS, callback) {
 
 }
 // ------------------------------------------------------------------------------------------------
-//Set up the application to handle GET requests sent in relation to TEST
-app.get('/Test', function(request, response)
+//Set up the application to handle GET requests sent in relation to TestHRM
+app.get('/TestHRM', function(request, response)
 {
 
     var UserID = request.query['UserID'] || '';
+    var SensorTS = request.query['SensorTS'] || '';
+    var SensorValue = request.query['SensorValue'] || '';
 
-    Test (UserID, function (err, result)
+    TestHRM (UserID, SensorTS, SensorValue, function (err, result)
     {
         if (err)
         {
@@ -351,14 +358,16 @@ app.get('/Test', function(request, response)
         }
         else
         {
-            console.log (result);
+            //console.log (JSON.stringify(result));
 
             response.status(200);
             response.setHeader('Content-type', 'text/html');
+            /*
             response.setHeader('Access-Control-Allow-Origin', '192.168.4.37'); // Smartphone IP
             response.setHeader('Access-Control-Allow-Origin', '192.168.4.90'); // Smartwatch IP
             response.setHeader('Access-Control-Allow-Methods', '*');
             response.setHeader('Access-Control-Allow-Headers', '*');
+             */
 
             return response.send(result);
         }
@@ -368,11 +377,12 @@ app.get('/Test', function(request, response)
 
 // ------------------------------------------------------------------------------------------------
 // Log sensor data in the MySQL Database
-function Test (UserID, callback) {
+function TestHRM (UserID, SensorTS, SensorValue, callback) {
 
     //Create a connection object
 
     // MySQL server on Azure
+    /*
     var conn = mysql.createConnection({
         host: "asddataserver.mysql.database.azure.com",
         user: "asduser@asddataserver",
@@ -380,8 +390,8 @@ function Test (UserID, callback) {
         database: "asd",
         port: 3306
     });
+    */
 
-    /*
     // MySQL server on localhost
     var conn = mysql.createConnection({
         host: "localhost",
@@ -390,7 +400,7 @@ function Test (UserID, callback) {
         database: "ASD",
         multipleStatements: true
     });
-     */
+
 
     //Open the connection
     conn.connect (
@@ -423,6 +433,116 @@ function Test (UserID, callback) {
             callback (err, false);
         } else {
             //console.log (JSON.stringify(result));
+            console.log ("HRM" + "," + SensorTS + "," + SensorValue);
+            callback (null, result);
+        }
+    });
+
+    conn.end();
+
+}
+
+// ------------------------------------------------------------------------------------------------
+
+//Set up the application to handle GET requests sent in relation to TestACCEL
+app.get('/TestACCEL', function(request, response)
+{
+    var UserID = request.query['UserID'] || '';
+    var SensorTS = request.query['SensorTS'] || '';
+    var SensorTSMS = request.query['SensorTSMS'] || '';
+    var SensorValueX = request.query['SensorX'] || '';
+    var SensorValueY = request.query['SensorY'] || '';
+    var SensorValueZ = request.query['SensorZ'] || '';
+
+    TestACCEL (UserID, SensorTS, SensorTSMS, SensorValueX, SensorValueY, SensorValueZ, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            return response.send(false);
+        }
+        else
+        {
+            //console.log (result);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+            /*
+            response.setHeader('Access-Control-Allow-Origin', '192.168.4.37'); // Smartphone IP
+            response.setHeader('Access-Control-Allow-Origin', '192.168.4.90'); // Smartwatch IP
+            response.setHeader('Access-Control-Allow-Methods', '*');
+            response.setHeader('Access-Control-Allow-Headers', '*');
+             */
+
+            return response.send(result);
+        }
+    });
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Log sensor data in the MySQL Database
+function TestACCEL (UserID, SensorTS, SensorTSMS, SensorValueX, SensorValueY, SensorValueZ, callback) {
+
+    //Create a connection object
+
+    // MySQL server on Azure
+    /*
+    var conn = mysql.createConnection({
+        host: "asddataserver.mysql.database.azure.com",
+        user: "asduser@asddataserver",
+        password: "Eric!!Cantona7",
+        database: "asd",
+        port: 3306
+    });
+    */
+
+    // MySQL server on localhost
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "eric!!cantona7",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            //if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
+
+    /*
+    conn.query (sql, [UserID], function (err, result) {
+
+        if (err) {
+            callback (err, false);
+            throw err;
+            console.log (err); // Testing purposes
+        } else {
+            console.log (JSON.stringify(result));
+            callback(result,true);
+        }
+    });
+    */
+
+    conn.query (sql, [UserID], function (err, result) {
+
+        if (err) {
+            console.log (err); // Testing purposes
+            callback (err, false);
+        } else {
+            //console.log ("ACCEL: " + JSON.stringify(result));
+            console.log ("ACCEL: " + UserID + "," + SensorTS + "," + SensorTSMS + "," + SensorValueX + "," + SensorValueY + "," + SensorValueZ);
             callback (null, result);
         }
     });

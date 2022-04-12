@@ -345,7 +345,7 @@ app.get('/TestHRM', function(request, response)
     var SensorTS = request.query['SensorTS'] || '';
     var SensorValue = request.query['SensorValue'] || '';
 
-    TestHRM (UserID, SensorTS, SensorValue, function (err, result)
+    TestHRM (UserID, SensorTS, SensorValue, 0, function (err, result)
     {
         if (err)
         {
@@ -362,12 +362,6 @@ app.get('/TestHRM', function(request, response)
 
             response.status(200);
             response.setHeader('Content-type', 'text/html');
-            /*
-            response.setHeader('Access-Control-Allow-Origin', '192.168.4.37'); // Smartphone IP
-            response.setHeader('Access-Control-Allow-Origin', '192.168.4.90'); // Smartwatch IP
-            response.setHeader('Access-Control-Allow-Methods', '*');
-            response.setHeader('Access-Control-Allow-Headers', '*');
-             */
 
             return response.send(result);
         }
@@ -377,7 +371,7 @@ app.get('/TestHRM', function(request, response)
 
 // ------------------------------------------------------------------------------------------------
 // Log sensor data in the MySQL Database
-function TestHRM (UserID, SensorTS, SensorValue, callback) {
+function TestHRM (UserID, LogTimeStamp, SensorValue, SMM, callback) {
 
     //Create a connection object
 
@@ -410,7 +404,7 @@ function TestHRM (UserID, SensorTS, SensorValue, callback) {
         }
     );
 
-    let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
+    //let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
 
     /*
     conn.query (sql, [UserID], function (err, result) {
@@ -426,6 +420,7 @@ function TestHRM (UserID, SensorTS, SensorValue, callback) {
     });
     */
 
+    /*
     conn.query (sql, [UserID], function (err, result) {
 
         if (err) {
@@ -433,10 +428,27 @@ function TestHRM (UserID, SensorTS, SensorValue, callback) {
             callback (err, false);
         } else {
             //console.log (JSON.stringify(result));
-            console.log ("HRM" + "," + SensorTS + "," + SensorValue);
+            console.log ("HRM," + UserID + "," + SensorTS + ",," + SensorValue);
             callback (null, result);
         }
     });
+    */
+
+    let sql = "SET @result = 0;CALL insertTrainingDataHRM(" + UserID + ", '" + LogTimeStamp + "', " + SensorValue + ", " + SMM + ", @result); SELECT @result";
+    //console.log (sql);
+
+    conn.query (sql, function (err, result) {
+
+        if (err) {
+            callback (err, false);
+            throw err;
+            console.log (err); // Testing purposes
+        } else {
+            //console.log (JSON.stringify(result));
+            callback(null,result);
+        }
+    });
+
 
     conn.end();
 
@@ -454,7 +466,7 @@ app.get('/TestACCEL', function(request, response)
     var SensorValueY = request.query['SensorY'] || '';
     var SensorValueZ = request.query['SensorZ'] || '';
 
-    TestACCEL (UserID, SensorTS, SensorTSMS, SensorValueX, SensorValueY, SensorValueZ, function (err, result)
+    TestACCEL (UserID, SensorTS, SensorValueX, SensorValueY, SensorValueZ, 0, function (err, result)
     {
         if (err)
         {
@@ -486,7 +498,7 @@ app.get('/TestACCEL', function(request, response)
 
 // ------------------------------------------------------------------------------------------------
 // Log sensor data in the MySQL Database
-function TestACCEL (UserID, SensorTS, SensorTSMS, SensorValueX, SensorValueY, SensorValueZ, callback) {
+function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, SMM, callback) {
 
     //Create a connection object
 
@@ -519,7 +531,7 @@ function TestACCEL (UserID, SensorTS, SensorTSMS, SensorValueX, SensorValueY, Se
         }
     );
 
-    let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
+    //let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
 
     /*
     conn.query (sql, [UserID], function (err, result) {
@@ -535,6 +547,7 @@ function TestACCEL (UserID, SensorTS, SensorTSMS, SensorValueX, SensorValueY, Se
     });
     */
 
+    /*
     conn.query (sql, [UserID], function (err, result) {
 
         if (err) {
@@ -542,8 +555,24 @@ function TestACCEL (UserID, SensorTS, SensorTSMS, SensorValueX, SensorValueY, Se
             callback (err, false);
         } else {
             //console.log ("ACCEL: " + JSON.stringify(result));
-            console.log ("ACCEL: " + UserID + "," + SensorTS + "," + SensorTSMS + "," + SensorValueX + "," + SensorValueY + "," + SensorValueZ);
+            console.log ("ACCEL," + UserID + "," + SensorTS + "," + SensorTSMS + "," + SensorValueX + "," + SensorValueY + "," + SensorValueZ);
             callback (null, result);
+        }
+    });
+     */
+
+    let sql = "SET @result = 0;CALL insertTrainingDataACCEL(" + UserID + ", '" + LogTimeStamp + "', " + SensorX + ", " + SensorY + ", " + SensorZ + ", " + SMM + ", @result); SELECT @result";
+    //console.log (sql);
+
+    conn.query (sql, function (err, result) {
+
+        if (err) {
+            callback (err, false);
+            throw err;
+            console.log (err); // Testing purposes
+        } else {
+            //console.log (JSON.stringify(result));
+            callback(null,result);
         }
     });
 

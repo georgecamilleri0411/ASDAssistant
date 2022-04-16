@@ -62,34 +62,19 @@ client.on ('qr', qr => {
 
 var nodeMailer = require('nodemailer');
 
-//Launch app
-//HTTP
-/*
-http.createServer(function (req, res) {
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.write('Hello World!');
-    res.end();
-}).listen(portNum);
-*/
+/* **********************
+ * Classification stuff *
+************************/
+let meanDiffX = 0;
+let meanDiffY = 0;
+let meanDiffZ = 0;
 
+/* ***************
+ * Web app stuff *
+*****************/
 app.listen (portNum, () => {
     console.log ("ASDAssist server running on port " + portNum);
 });
-
-//HTTPS
-/*
-const https = require('https');
-const options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
-};
-
-https.createServer(options, function (req, res) {
-    res.writeHead(200);
-    console.log ("working ...");
-    res.end("working ...");
-}).listen(8881);
-*/
 
 // ------------------------------------------------------------------------------------------------
 //Set up the application to handle GET requests in relation to WhatsApp messaging
@@ -194,148 +179,6 @@ app.get('/sendEmailMessage', function(request, response)
 
 });
 
-// ------------------------------------------------------------------------------------------------
-//Set up the application to handle GET requests sent in relation to logging sensor data
-app.get('/LogSensorDataOLD', function(request, response)
-{
-
-    var SensorID = request.query['SensorID'] || '';
-    var SensorValue = request.query['SensorValue'] || '';
-    var SensorTS = request.query['SensorTS'] || '';
-
-    logSensorDataOLD (SensorID, SensorValue, SensorTS, function (err, result)
-    {
-        if (err)
-        {
-            console.log ("Error: ", err);
-
-            response.status(200);
-            response.setHeader('Content-type', 'text/html');
-            return response.send(false);
-        }
-        else
-        {
-            console.log ("Sensor data inserted at ID: [" + result + "]", result);
-
-            response.status(200);
-            response.setHeader('Content-type', 'text/html');
-            return response.send(result);
-        }
-    });
-
-});
-
-// ------------------------------------------------------------------------------------------------
-// Log sensor data in the MySQL Database
-function logSensorDataOLD (SensorID, SensorValue, SensorTS, callback) {
-
-    //Create a connection object
-    var conn = mysql.createConnection({
-        host: "localhost",
-        user: "ASDuser",
-        password: "letmein",
-        database: "ASD",
-        multipleStatements: true
-    });
-
-    //Open the connection
-    conn.connect (
-        function(err) {
-            if (err) throw err;
-            if (err) console.log (err); // Testing purposes
-        }
-    );
-
-    let sql = "SET @result = 0;CALL insertSensorReading(" + SensorID + ", '" + SensorValue + "', '" + SensorTS + "', @result); SELECT @result";
-    console.log (sql);
-
-    conn.query (sql, function (err, result) {
-
-        if (err) {
-            callback (err, false);
-            throw err;
-            console.log (err); // Testing purposes
-        } else {
-            console.log (JSON.stringify(result));
-            callback(null,result);
-        }
-    });
-
-    conn.end();
-
-}
-
-// ------------------------------------------------------------------------------------------------
-//Set up the application to handle GET requests sent in relation to logging sensor data
-app.get('/LogSensorData', function(request, response)
-{
-
-    var UserID = request.query['UserID'] || '';
-    var SensorType = request.query['SensorType'] || '';
-    var SensorValue = request.query['SensorValue'] || '';
-    var SensorTS = request.query['SensorTS'] || '';
-
-    logSensorData (UserID, SensorType, SensorValue, SensorTS, function (err, result)
-    {
-        if (err)
-        {
-            console.log ("Error: ", err);
-
-            response.status(200);
-            response.setHeader('Content-type', 'text/html');
-            return response.send(false);
-        }
-        else
-        {
-            console.log ("Sensor data inserted at ID: [" + result + "]", result);
-
-            response.status(200);
-            response.setHeader('Content-type', 'text/html');
-            return response.send(result);
-        }
-    });
-
-});
-
-// ------------------------------------------------------------------------------------------------
-// Log sensor data in the MySQL Database
-function logSensorData (UserID, SensorType, SensorValue, SensorTS, callback) {
-
-    //Create a connection object
-    var conn = mysql.createConnection({
-        host: "localhost",
-        user: "root",
-        password: "eric!!cantona7",
-        database: "ASD",
-        multipleStatements: true
-    });
-
-    //Open the connection
-    conn.connect (
-        function(err) {
-            if (err) throw err;
-            if (err) console.log (err); // Testing purposes
-        }
-    );
-
-    let sql = "SET @result = 0;CALL insertSensorReadingNEW(" + UserID + ", '" + SensorType + "', '" + SensorValue + "', '" + SensorTS + "', @result); SELECT @result";
-    console.log (sql);
-
-    conn.query (sql, function (err, result) {
-
-        if (err) {
-            callback (err, false);
-            throw err;
-            console.log (err); // Testing purposes
-        } else {
-            console.log (JSON.stringify(result));
-            callback(null,result);
-        }
-    });
-
-    conn.end();
-
-}
 // ------------------------------------------------------------------------------------------------
 //Set up the application to handle GET requests sent in relation to TestHRM
 app.get('/TestHRM', function(request, response)
@@ -531,38 +374,7 @@ function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, SMM, callba
         }
     );
 
-    //let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
-
-    /*
-    conn.query (sql, [UserID], function (err, result) {
-
-        if (err) {
-            callback (err, false);
-            throw err;
-            console.log (err); // Testing purposes
-        } else {
-            console.log (JSON.stringify(result));
-            callback(result,true);
-        }
-    });
-    */
-
-    /*
-    conn.query (sql, [UserID], function (err, result) {
-
-        if (err) {
-            console.log (err); // Testing purposes
-            callback (err, false);
-        } else {
-            //console.log ("ACCEL: " + JSON.stringify(result));
-            console.log ("ACCEL," + UserID + "," + SensorTS + "," + SensorTSMS + "," + SensorValueX + "," + SensorValueY + "," + SensorValueZ);
-            callback (null, result);
-        }
-    });
-     */
-
     let sql = "SET @result = 0;CALL insertTrainingDataACCEL(" + UserID + ", '" + LogTimeStamp + "', " + SensorX + ", " + SensorY + ", " + SensorZ + ", " + SMM + ", @result); SELECT @result";
-    //console.log (sql);
 
     conn.query (sql, function (err, result) {
 
@@ -573,6 +385,88 @@ function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, SMM, callba
         } else {
             //console.log (JSON.stringify(result));
             callback(null,result);
+        }
+    });
+
+    conn.end();
+
+}
+
+// ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests sent in relation to ClassifyUserData
+app.get('/ClassifyUserData', function(request, response)
+{
+
+    var UserID = request.query['UserID'] || '';
+
+    classifyUserData (UserID, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            return response.send(false);
+        }
+        else
+        {
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            return response.send(result);
+            console.log(result);
+        }
+    });
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Classify user data for this user
+function classifyUserData (UserID, callback) {
+
+    //Create a connection object
+    // MySQL server on localhost
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "eric!!cantona7",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    //let sql = "SELECT classifyUserData(" + UserID + ")";
+    let sql = "set @result = 0; CALL sp_classifyUserData(" + UserID + ", @result);SELECT @result;"
+
+    conn.query (sql, function (err, result) {
+
+        if (err) throw err;
+        if (err) console.log (err);
+
+        if (err) {
+            callback (err, false);
+        } else {
+            if (JSON.stringify(result).length < 2) {
+                callback(null, false);
+            } else {
+                var smm = JSON.stringify(result);
+                if ((smm.substring((smm.search("@result") + 9), (smm.search("@result") + 10))) === "0") {
+                    callback(null, result);
+                }
+                else
+                {
+                    callback(null, result)
+                }
+            }
         }
     });
 

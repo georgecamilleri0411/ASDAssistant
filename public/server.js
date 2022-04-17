@@ -188,7 +188,7 @@ app.get('/TestHRM', function(request, response)
     var SensorTS = request.query['SensorTS'] || '';
     var SensorValue = request.query['SensorValue'] || '';
 
-    TestHRM (UserID, SensorTS, SensorValue, 0, function (err, result)
+    TestHRM (UserID, SensorTS, SensorValue, function (err, result)
     {
         if (err)
         {
@@ -214,7 +214,7 @@ app.get('/TestHRM', function(request, response)
 
 // ------------------------------------------------------------------------------------------------
 // Log sensor data in the MySQL Database
-function TestHRM (UserID, LogTimeStamp, SensorValue, SMM, callback) {
+function TestHRM (UserID, LogTimeStamp, SensorValue, callback) {
 
     //Create a connection object
 
@@ -277,7 +277,7 @@ function TestHRM (UserID, LogTimeStamp, SensorValue, SMM, callback) {
     });
     */
 
-    let sql = "SET @result = 0;CALL insertTrainingDataHRM(" + UserID + ", '" + LogTimeStamp + "', " + SensorValue + ", " + SMM + ", @result); SELECT @result";
+    let sql = "SET @result = 0;CALL insertTestDataHRM(" + UserID + ", '" + LogTimeStamp + "', " + SensorValue + ", @result); SELECT @result";
     //console.log (sql);
 
     conn.query (sql, function (err, result) {
@@ -304,12 +304,12 @@ app.get('/TestACCEL', function(request, response)
 {
     var UserID = request.query['UserID'] || '';
     var SensorTS = request.query['SensorTS'] || '';
-    var SensorTSMS = request.query['SensorTSMS'] || '';
+    //var SensorTSMS = request.query['SensorTSMS'] || '';
     var SensorValueX = request.query['SensorX'] || '';
     var SensorValueY = request.query['SensorY'] || '';
     var SensorValueZ = request.query['SensorZ'] || '';
 
-    TestACCEL (UserID, SensorTS, SensorValueX, SensorValueY, SensorValueZ, 0, function (err, result)
+    TestACCEL (UserID, SensorTS, SensorValueX, SensorValueY, SensorValueZ, function (err, result)
     {
         if (err)
         {
@@ -341,7 +341,7 @@ app.get('/TestACCEL', function(request, response)
 
 // ------------------------------------------------------------------------------------------------
 // Log sensor data in the MySQL Database
-function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, SMM, callback) {
+function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, callback) {
 
     //Create a connection object
 
@@ -374,7 +374,7 @@ function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, SMM, callba
         }
     );
 
-    let sql = "SET @result = 0;CALL insertTrainingDataACCEL(" + UserID + ", '" + LogTimeStamp + "', " + SensorX + ", " + SensorY + ", " + SensorZ + ", " + SMM + ", @result); SELECT @result";
+    let sql = "SET @result = 0;CALL insertTestDataACCEL(" + UserID + ", '" + LogTimeStamp + "', " + SensorX + ", " + SensorY + ", " + SensorZ + ", @result); SELECT @result";
 
     conn.query (sql, function (err, result) {
 
@@ -415,8 +415,9 @@ app.get('/ClassifyUserData', function(request, response)
             response.status(200);
             response.setHeader('Content-type', 'text/html');
 
+            console.log(JSON.stringify(result));
             return response.send(result);
-            console.log(result);
+
         }
     });
 

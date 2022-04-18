@@ -12,6 +12,9 @@ var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
+//Set up express to serve static files from the public folder
+app.use (express.static ('public'));
+
 /* ****************
  * WhatsApp stuff *
 *******************/
@@ -19,9 +22,6 @@ app.use(bodyParser.urlencoded({extended: true}));
 const qrcode = require('qrcode-terminal');
 const { Client, LegacySessionAuth } = require('whatsapp-web.js');
 const SAVED_SESSION = './saved_session.json';
-
-//Set up express to serve static files from the public folder
-app.use (express.static ('public'));
 
 // WhatsApp status flags
 let readyState = false;
@@ -72,6 +72,8 @@ let meanDiffZ = 0;
 /* ***************
  * Web app stuff *
 *****************/
+//Set up express to serve static files from the public folder
+app.use (express.static ('public'));
 app.listen (portNum, () => {
     console.log ("ASDAssist server running on port " + portNum);
 });
@@ -115,7 +117,6 @@ app.get('/sendWAMessage', function(request, response)
 });
 
 // ------------------------------------------------------------------------------------------------
-
 // Send message
 function sendMessage (messageTo, messageBody)
 {
@@ -140,20 +141,26 @@ function sendMessage (messageTo, messageBody)
 app.get('/sendEmailMessage', function(request, response)
 {
 
-    const emailService = 'gmail';
-    const emailUser = 'ASDAssistantAlertEngine@gmail.com';
-    const emailPwd = 'M00691035';
-
     var eTo = request.query['eTo'] || '';
     var eSubject = request.query['eSubject'] || '';
     var eBody = request.query['eBody'] || '';
+
+    sendEmailMessage(eTo, eSubject, eBody);
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Send message
+function sendEmailMessage (messageTo, messageSubject, messageBody) {
+
+    const emailService = 'gmail';
+    const emailUser = 'ASDAssistantAlertEngine@gmail.com';
+    const emailPwd = 'M00691035';
 
     var emailTransporter = nodeMailer.createTransport ({
         // service: 'gmail',
         service: emailService,
         auth: {
-            //user: 'ASDAssistantAlertEngine@gmail.com',
-            //pass: 'M00691035'
             user: emailUser,
             pass: emailPwd
         }
@@ -161,9 +168,9 @@ app.get('/sendEmailMessage', function(request, response)
 
     var emailMessage = {
         from: emailUser,
-        to: eTo,
-        subject: eSubject,
-        text: eBody
+        to: messageTo,
+        subject: messageSubject,
+        text: messageBody
     };
 
     emailTransporter.sendMail (emailMessage, function (error, info) {
@@ -177,7 +184,7 @@ app.get('/sendEmailMessage', function(request, response)
         }
     });
 
-});
+}
 
 // ------------------------------------------------------------------------------------------------
 //Set up the application to handle GET requests sent in relation to TestHRM
@@ -247,35 +254,8 @@ function TestHRM (UserID, LogTimeStamp, SensorValue, callback) {
         }
     );
 
+    // TEST
     //let sql = "SELECT Details FROM User WHERE U_UniqueID = ?";
-
-    /*
-    conn.query (sql, [UserID], function (err, result) {
-
-        if (err) {
-            callback (err, false);
-            throw err;
-            console.log (err); // Testing purposes
-        } else {
-            console.log (JSON.stringify(result));
-            callback(result,true);
-        }
-    });
-    */
-
-    /*
-    conn.query (sql, [UserID], function (err, result) {
-
-        if (err) {
-            console.log (err); // Testing purposes
-            callback (err, false);
-        } else {
-            //console.log (JSON.stringify(result));
-            console.log ("HRM," + UserID + "," + SensorTS + ",," + SensorValue);
-            callback (null, result);
-        }
-    });
-    */
 
     let sql = "SET @result = 0;CALL insertTestDataHRM(" + UserID + ", '" + LogTimeStamp + "', " + SensorValue + ", @result); SELECT @result";
     //console.log (sql);
@@ -326,12 +306,6 @@ app.get('/TestACCEL', function(request, response)
 
             response.status(200);
             response.setHeader('Content-type', 'text/html');
-            /*
-            response.setHeader('Access-Control-Allow-Origin', '192.168.4.37'); // Smartphone IP
-            response.setHeader('Access-Control-Allow-Origin', '192.168.4.90'); // Smartwatch IP
-            response.setHeader('Access-Control-Allow-Methods', '*');
-            response.setHeader('Access-Control-Allow-Headers', '*');
-             */
 
             return response.send(result);
         }
@@ -415,7 +389,7 @@ app.get('/ClassifyUserData', function(request, response)
             response.status(200);
             response.setHeader('Content-type', 'text/html');
 
-            console.log(JSON.stringify(result));
+            //console.log(JSON.stringify(result));
             return response.send(result);
 
         }
@@ -460,13 +434,99 @@ function classifyUserData (UserID, callback) {
                 callback(null, false);
             } else {
                 var smm = JSON.stringify(result);
-                if ((smm.substring((smm.search("@result") + 9), (smm.search("@result") + 10))) === "0") {
-                    callback(null, result);
+                if (smm.includes(":1}]])") == false) {
+                    console.log ("Classification has predicted no SMM.");
                 }
                 else
                 {
-                    callback(null, result)
+                    console.log ("Classification has predicted SMM!");
                 }
+                callback(null, result);
+            }
+        }
+    });
+
+    conn.end();
+
+}
+
+// ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests sent in relation to SendAlarmEmailAddress
+app.get('/SendAlarmEmail', function(request, response)
+{
+
+    var UserID = request.query['UserID'] || '';
+
+    getContactEmailAddress (UserID, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            return response.send(false);
+        }
+        else
+        {
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            if (JSON.stringify(result).includes("null") == true) {
+                return response.send(false);
+            } else {
+                let msgSubject = "ALERT message from ASD Assistant";
+                let msgBody = "This is an alert message from ASDAssistant. The system has classified recent " +
+                    "hand gestures as being possibly related to high anxiety from the smartwatch wearer.";
+                let emailAddress = JSON.stringify(result);
+                emailAddress = emailAddress.substring((emailAddress.search(":") + 2), (emailAddress.length - 3));
+                console.log ("Sending alarm email to " + emailAddress);
+                sendEmailMessage (emailAddress, msgSubject, msgBody);
+                return response.send(result);
+            }
+
+        }
+    });
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Classify user data for this user
+function getContactEmailAddress (UserID, callback) {
+
+    //Create a connection object
+    // MySQL server on localhost
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "eric!!cantona7",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    let sql = "SELECT getUserContactEmailAddresses(" + UserID + ") AS email;"
+
+    conn.query (sql, function (err, result) {
+
+        if (err) throw err;
+        if (err) console.log (err);
+
+        if (err) {
+            callback (err, false);
+        } else {
+            if (JSON.stringify(result).length < 2) {
+                callback(null, false);
+            } else {
+                callback(null, result);
             }
         }
     });

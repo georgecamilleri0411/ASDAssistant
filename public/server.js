@@ -433,13 +433,13 @@ function classifyUserData (UserID, callback) {
             if (JSON.stringify(result).length < 2) {
                 callback(null, false);
             } else {
-                var smm = JSON.stringify(result);
+                let smm = JSON.stringify(result);
                 if (smm.includes(":1}]])") == false) {
-                    console.log ("Classification has predicted no SMM.");
+                    console.log ("Classification has predicted no SMM for user " + UserID + ".");
                 }
                 else
                 {
-                    console.log ("Classification has predicted SMM!");
+                    console.log ("Classification has predicted SMM for user " + UserID + "!");
                 }
                 callback(null, result);
             }
@@ -456,6 +456,19 @@ app.get('/SendAlarmEmail', function(request, response)
 {
 
     var UserID = request.query['UserID'] || '';
+    let userDetails = "";
+
+    getUserDetails (UserID, function(err, result) {
+       if (err)
+       {
+           console.log ("Error: ", err);
+       }
+       else
+       {
+           userDetails = JSON.stringify(result);
+           userDetails = userDetails.substring((userDetails.search(":") + 2), (userDetails.length - 3));
+       }
+    });
 
     getContactEmailAddress (UserID, function (err, result)
     {
@@ -478,7 +491,9 @@ app.get('/SendAlarmEmail', function(request, response)
             } else {
                 let msgSubject = "ALERT message from ASD Assistant";
                 let msgBody = "This is an alert message from ASDAssistant. The system has classified recent " +
-                    "hand gestures as being possibly related to high anxiety from the smartwatch wearer.";
+                    "hand gestures as being possibly related to high anxiety from the smartwatch wearer with " +
+                    "the following details: " + userDetails + ".";
+                    //"hand gestures as being possibly related to high anxiety from the smartwatch wearer.";
                 let emailAddress = JSON.stringify(result);
                 emailAddress = emailAddress.substring((emailAddress.search(":") + 2), (emailAddress.length - 3));
                 console.log ("Sending alarm email to " + emailAddress);
@@ -492,7 +507,7 @@ app.get('/SendAlarmEmail', function(request, response)
 });
 
 // ------------------------------------------------------------------------------------------------
-// Classify user data for this user
+// Retrieve the specified user's contact email address(es)
 function getContactEmailAddress (UserID, callback) {
 
     //Create a connection object
@@ -536,3 +551,45 @@ function getContactEmailAddress (UserID, callback) {
 }
 
 // ------------------------------------------------------------------------------------------------
+// Retrieve the specified user's details
+function getUserDetails (UserID, callback) {
+
+    //Create a connection object
+    // MySQL server on localhost
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "eric!!cantona7",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    let sql = "SELECT getUserDetails(" + UserID + ") AS email;"
+
+    conn.query (sql, function (err, result) {
+
+        if (err) throw err;
+        if (err) console.log (err);
+
+        if (err) {
+            callback (err, false);
+        } else {
+            if (JSON.stringify(result).length < 2) {
+                callback(null, false);
+            } else {
+                callback(null, result);
+            }
+        }
+    });
+
+    conn.end();
+
+}

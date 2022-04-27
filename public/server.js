@@ -15,10 +15,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 //Set up express to serve static files from the public folder
 app.use (express.static ('public'));
 
-/* ****************
- * WhatsApp stuff *
-*******************/
-
+/* *******************************
+ * WhatsApp stuff - experimental *
+******************************** */
+/*
 const qrcode = require('qrcode-terminal');
 //const { Client, LegacySessionAuth } = require('whatsapp-web.js');
 const { Client, LegacySessionAuth } = require('whatsapp-web.js');
@@ -56,6 +56,7 @@ client.on ('authenticated', (session) => {
 client.on ('qr', qr => {
     qrcode.generate(qr, {small: true});
 });
+ */
 
 /* *************
  * Email stuff *
@@ -74,6 +75,7 @@ app.listen (portNum, () => {
 });
 
 // ------------------------------------------------------------------------------------------------
+/*
 //Set up the application to handle GET requests in relation to WhatsApp messaging
 app.get('/sendWAMessage', function(request, response)
 {
@@ -130,6 +132,7 @@ function sendMessage (messageTo, messageBody)
         messageSent = true;
     }
 }
+ */
 
 // ------------------------------------------------------------------------------------------------
 //Set up the application to handle GET requests sent in relation to email messaging

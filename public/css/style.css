@@ -42,12 +42,12 @@ a:hover
     padding-right: 3px;
 }
 
-.info
+.new-data-div
 {
     font-size: 14px;
     text-align: center;
     color: #777;
-    display: none;
+    /*display: none;*/
 }
 
 .right
@@ -78,12 +78,12 @@ a:hover
     color: darkseagreen;
 }
 
-#info
+#new-user
 {
     font-size: 20px;
     text-align: center;
     color: rgb(194, 193, 193);
-    visibility: hidden;
+    /*visibility: hidden;*/
 }
 
 #results

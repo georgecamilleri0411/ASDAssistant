@@ -20,6 +20,7 @@ app.use (express.static ('public'));
 *******************/
 
 const qrcode = require('qrcode-terminal');
+//const { Client, LegacySessionAuth } = require('whatsapp-web.js');
 const { Client, LegacySessionAuth } = require('whatsapp-web.js');
 const SAVED_SESSION = './saved_session.json';
 
@@ -62,12 +63,6 @@ client.on ('qr', qr => {
 
 var nodeMailer = require('nodemailer');
 
-/* **********************
- * Classification stuff *
-************************/
-let meanDiffX = 0;
-let meanDiffY = 0;
-let meanDiffZ = 0;
 
 /* ***************
  * Web app stuff *
@@ -230,7 +225,7 @@ function TestHRM (UserID, LogTimeStamp, SensorValue, callback) {
     var conn = mysql.createConnection({
         host: "asddataserver.mysql.database.azure.com",
         user: "asduser@asddataserver",
-        password: "Eric!!Cantona7",
+        password: "letmelogin",
         database: "asd",
         port: 3306
     });
@@ -240,7 +235,7 @@ function TestHRM (UserID, LogTimeStamp, SensorValue, callback) {
     var conn = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "eric!!cantona7",
+        password: "letmelogin",
         database: "ASD",
         multipleStatements: true
     });
@@ -324,7 +319,7 @@ function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, callback) {
     var conn = mysql.createConnection({
         host: "asddataserver.mysql.database.azure.com",
         user: "asduser@asddataserver",
-        password: "Eric!!Cantona7",
+        password: "letmelogin",
         database: "asd",
         port: 3306
     });
@@ -334,7 +329,7 @@ function TestACCEL (UserID, LogTimeStamp, SensorX, SensorY, SensorZ, callback) {
     var conn = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "eric!!cantona7",
+        password: "letmelogin",
         database: "ASD",
         multipleStatements: true
     });
@@ -406,7 +401,7 @@ function classifyUserData (UserID, callback) {
     var conn = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "eric!!cantona7",
+        password: "letmelogin",
         database: "ASD",
         multipleStatements: true
     });
@@ -420,7 +415,7 @@ function classifyUserData (UserID, callback) {
     );
 
     //let sql = "SELECT classifyUserData(" + UserID + ")";
-    let sql = "set @result = 0; CALL sp_classifyUserData(" + UserID + ", @result);SELECT @result;"
+    let sql = "set @result = 0; CALL classifyUserData(" + UserID + ", @result);SELECT @result;"
 
     conn.query (sql, function (err, result) {
 
@@ -515,7 +510,7 @@ function getContactEmailAddress (UserID, callback) {
     var conn = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "eric!!cantona7",
+        password: "letmelogin",
         database: "ASD",
         multipleStatements: true
     });
@@ -559,7 +554,7 @@ function getUserDetails (UserID, callback) {
     var conn = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "eric!!cantona7",
+        password: "letmelogin",
         database: "ASD",
         multipleStatements: true
     });
@@ -593,3 +588,158 @@ function getUserDetails (UserID, callback) {
     conn.end();
 
 }
+
+// ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests sent in relation to SearchUser
+app.get('/SearchUser', function(request, response)
+{
+
+    var UserDetails = request.query['UserDetails'] || '';
+
+    searchUser(UserDetails, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            return response.send(false);
+        }
+        else
+        {
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            //console.log(JSON.stringify(result));
+            return response.send(result);
+
+        }
+    });
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Search for users
+function searchUser (UserDetails, callback) {
+
+    //Create a connection object
+    // MySQL server on localhost
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "letmelogin",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    let sql = "SELECT U_UniqueID AS UserID, Details AS UserDetails FROM User";
+    if (UserDetails.length > 0) {
+        sql += " WHERE Details LIKE '%" + UserDetails + "%';"
+    } else {
+        sql += ";";
+    }
+
+    conn.query (sql, function (err, result) {
+
+        if (err) throw err;
+        if (err) console.log (err);
+
+        if (err) {
+            callback (err, false);
+        } else {
+            if (JSON.stringify(result).length < 2) {
+                callback(null, false);
+            } else {
+                callback(null, result);
+            }
+        }
+    });
+
+    conn.end();
+
+}
+// ------------------------------------------------------------------------------------------------
+//Set up the application to handle GET requests sent in relation to AddNewUser
+app.get('/AddNewUser', function(request, response)
+{
+
+    var UserDetails = request.query['UserDetails'] || '';
+
+    addNewUser(UserDetails, function (err, result)
+    {
+        if (err)
+        {
+            console.log ("Error: ", err);
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            return response.send(false);
+        }
+        else
+        {
+            //console.log (JSON.stringify(result));
+
+            response.status(200);
+            response.setHeader('Content-type', 'text/html');
+
+            return response.send(result);
+        }
+    });
+
+});
+
+// ------------------------------------------------------------------------------------------------
+// Add a new record in the User table
+function addNewUser (UserDetails, callback) {
+
+    //Create a connection object
+
+    // MySQL server on localhost
+    var conn = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "letmelogin",
+        database: "ASD",
+        multipleStatements: true
+    });
+
+
+    //Open the connection
+    conn.connect (
+        function(err) {
+            //if (err) throw err;
+            if (err) console.log (err); // Testing purposes
+        }
+    );
+
+    let sql = "SET @result = 0;CALL insertUser('" + UserDetails + "', @result); SELECT @result;";
+
+    conn.query (sql, function (err, result) {
+
+        if (err) {
+            callback (err, false);
+            throw err;
+            console.log (err); // Testing purposes
+        } else {
+            //console.log (JSON.stringify(result));
+            callback(null,result);
+        }
+    });
+
+
+    conn.end();
+
+}
+
+// ------------------------------------------------------------------------------------------------

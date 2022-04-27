@@ -1,532 +1,427 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<html lang="en">
 
-<html>
+<head>
+    <title>ASD Assistant</title>
 
-    <head>
-        <title>ASD Assistant</title>
-        <script src="server.js"></script>
-        <link rel="stylesheet" href="css/style.css">
-    </head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="css/style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
 
-    <body style="background-color: steelblue">
-        <h1 class="center" id="headline">
-            ASD Assistant
-        </h1>
+    <!-- Bootstrap stuff -->
+    <link rel="stylesheet" href="stylesheets/bootstrap-3.3.7/dist/css/bootstrap.min.css">
 
-        <h2 class="center" id="subheading">
-            Autism Spectrum Disorder - Automated Assistant
-        </h2>
+    <!-- jQuery library -->
+    <script src="stylesheets/bootstrap-3.3.7/docs/assets/js/vendor/jquery.min.js"></script>
 
-        <div id="info">
-            Info
-        </div>
+    <!-- Latest compiled JavaScript -->
+    <script src="stylesheets/bootstrap-3.3.7/docs/dist/js/bootstrap.min.js"></script>
+    <!-- End of Bootstrap stuff -->
 
-        <div class="right">
-            <button id="mike_button" onclick="btnMike()">
-                <img id="mike_img" src="images/mic.png" alt="Start">
+    <!-- My custom CSS -->
+    <link rel="stylesheet" href="stylesheets/style.css">
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse" id="my-nav-bar">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
             </button>
+
+            <a class="navbar-brand" href="">Home</a>
+
         </div>
 
-        <div id="results">
-            <span id="final_span" class="final"></span>
-            <span id="current_span" class="interim"></span>
-            <p>
+        <div class="collapse navbar-collapse" id="myNavbar">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="" id="btnAddUser" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalAddUserForm">Add User</a>
+                </li>
+            </ul>
+            <!--
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="" id="btnAddContact" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalAddUserForm">Add Contact</a>
+                </li>
+            </ul>
+            -->
+            <!--
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="" id="btnAddNotificationDetails" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalAddUserForm">Add Notification Details</a>
+                </li>
+            </ul>
+            -->
         </div>
+    </div>
+</nav>
 
-        <div id="replies">
-            <span id="speech_reply" class="reply"></span>
-            <p>
-        </div>
+<!-- User Login/Registration Form -->
+<div class="modal fade" id="modalLRForm" tabindex="-1" role="dialog" aria-labelledby="modalLRForm" aria-hidden="true">
+    <div class="modal-dialog cascading-modal" role="document">
+        <!--Content-->
+        <div class="modal-content">
 
-    </body>
-</html>
+            <!-- Modal cascading tabs -->
+            <div class="modal-c-tabs">
 
-<script>
+                <!-- Navigation tabs (Login/Register) -->
+                <ul class="nav nav-tabs md-tabs tabs-2 light-blue darken-3" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#loginPanel" role="tab"><i class="fas fa-user mr-1"></i>
+                            Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#registerPanel" role="tab"><i class="fas fa-user-plus mr-1"></i>
+                            Register</a>
+                    </li>
+                </ul>
 
-    const defaultVoice = 28;
-    const welcomeStatement = "Welcome to Rita, your voice-enabled assistant. I can help you find information on your course."
-    const requestStudentNumber = "First, you must identify yourself. Please state your student number";
-    const requestContinuation = "Is there anything else I can help you with?"
+                <!-- Login/Register Panels -->
+                <div class="tab-content">
+                    <!-- Log In -->
+                    <div class="tab-pane fade in show active" id="loginPanel" role="tabpanel">
 
-    var final_transcript = '';
-    var recognizing = false;
-    var ignore_onend;
-    var start_timestamp;
-    var two_line = /\n\n/g;
-    var one_line = /\n/g;
-    var language = "en-GB";
-    var auto_reply = ""
-    var full_transcript = '';
-    var speech = window.speechSynthesis;
+                        <!-- Form body -->
+                        <div class="modal-body mb-1">
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="loginUserName">Username</label>
+                                <input type="text" id="loginUserName" class="form-control form-control-sm validate">
+                            </div>
 
-    // Variables used for the speech interaction flow
-    var currentMood = 0; // 0 to 5
-    var moodReplyMisunderstood =
-        [
-            "I'm afraid I didn't get that.",
-            "Can you please repeat?",
-            "I'm still not understanding.",
-            "Please talk in a louder and clearer voice.",
-            "It's not happening for us.",
-            "I guess there's no point in carrying on."
-        ];
-    var isTalking = false;
-    var speechProcessed = false;
-    var flowStatus = 0;
-    var studentRecognised = false;
-    var speechValue = "";
-    var studentNumber = "";
-    var studentName = "";
-    var studentRequest = "";
+                            <div class="md-form form-sm mb-4">
+                                <i class="fas fa-lock prefix"></i>
+                                <label data-error="wrong" data-success="right" for="loginPassword">Password</label>
+                                <input type="password" id="loginPassword" class="form-control form-control-sm validate">
+                            </div>
 
-    displayStuff('info_start');
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseText" data-error="wrong" data-success="right"></label>
+                            </div>
 
-    function utterSpeech (textToUtter = "", voiceIndex = defaultVoice, isReply = false)
-    {
-        var utterThis = new SpeechSynthesisUtterance(textToUtter.valueOf());
-        var voices = speech.getVoices();
-        utterThis.voice = voices[voiceIndex];
-        utterThis.lang = language;
+                            <div class="text-center mt-2">
+                                <button id="btnLogIn" class="btn btn-info">Log in <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnLogIn").addEventListener("click", fnLogIn);
 
-        isTalking = true;
-        speech.speak (utterThis);
-        appendTranscript(textToUtter, isReply);
-        isTalking = false;
-    }
+                                    function fnLogIn () {
+                                        var userName = document.getElementById("loginUserName").value;
+                                        var userPassword = document.getElementById("loginPassword").value;
 
-    function appendTranscript(speechToAdd = "", isReply = false)
-    {
-        if (isReply)
-        {
-            document.getElementById('speech_reply').innerHTML
-                += "<b>" + linebreak(capitalise(speechToAdd)) + "</b><br>";
-        }
-        else
-        {
-            document.getElementById('speech_reply').innerHTML
-                += linebreak(capitalise(speechToAdd)) + "<br>";
-        }
-    }
+                                        if (userName.length <= 4 || userPassword.length <= 4) {
+                                            document.getElementById("responseText").innerText =
+                                                "Username and Password must be more than 4 characters long!";
+                                            document.getElementById("loginUserName").value = "";
+                                            document.getElementById("loginPassword").value = "";
+                                        } else {
+                                            //Set up AJAX request
+                                            var xhttp = new XMLHttpRequest();
+                                            xhttp.open("GET", "login?playerName=" + userName
+                                                + "&playerPassword=" + userPassword, true); //false==sync
+                                            xhttp.send();
 
-    function clearTranscript()
-    {
-        document.getElementById('speech_reply').innerHTML = "";
-    }
-
-    function setFlowStatus(_flowStatus = 0)
-    {
-        flowStatus = _flowStatus;
-        sessionStorage.setItem('flowStatus', flowStatus.toString());
-    }
-
-    function setNextMood(resetMood = false)
-    {
-        if (resetMood)
-        {
-            this.currentMood = 0;
-        }
-        else if (this.currentMood >= this.moodReplyMisunderstood.length)
-        {
-            this.currentMood = this.moodReplyMisunderstood.length;
-        }
-        else
-        {
-            this.currentMood++;
-        }
-    }
-
-    function linebreak(s) 
-    {
-        return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
-    }
-
-    var first_char = /\S/;
-
-    function capitalise(s)
-    {
-        return s.replace(first_char, function(m) { return m.toUpperCase(); });
-    }
-
-    if (!('webkitSpeechRecognition' in window)) 
-    {
-        upgrade();
-    } 
-    else 
-    {
-        mike_button.style.display = 'inline-block';
-        var recognition = new webkitSpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-
-        recognition.onstart = function() 
-        {
-            recognizing = true;
-            displayStuff('info_speak_now');
-            mike_img.src = 'images/mic-animate.gif';
-        };
-
-        recognition.onerror = function(event) 
-        {
-            if (event.error == 'audio-capture')
-            {
-                mike_img.src = 'images/mic.png';
-                displayStuff('info_no_microphone');
-                ignore_onend = true;
-            }
-
-            if (event.error == 'not-allowed') 
-            {
-                if (event.timeStamp - start_timestamp < 100) 
-                {
-                    displayStuff('info_blocked');
-                } 
-                else 
-                {
-                    displayStuff('info_denied');
-                }
-                ignore_onend = true;
-            }
-        };
-
-        recognition.onend = function() 
-        {
-            recognizing = false;
-            if (ignore_onend) 
-            {
-                return;
-            }
-
-            mike_img.src = 'images/mic.png';
-
-            if (!final_transcript) 
-            {
-                displayStuff('info_start');
-                return;
-            }
-
-            displayStuff('');
-
-            if (window.getSelection) 
-            {
-                window.getSelection().removeAllRanges();
-                var range = document.createRange();
-                range.selectNode(document.getElementById('final_span'));
-                window.getSelection().addRange(range);
-            }
-        };
-
-        /*
-        Main function containing the logic controlling the speech flow
-        following speech recognition
-         */
-        recognition.onresult = function(event)
-        {
-            var interim_transcript = '';
-
-            for (var i = event.resultIndex; i < event.results.length; ++i)
-            {
-                if (event.results[i].isFinal)
-                {
-                    speechProcessed = false;
-                    final_transcript += event.results[i][0].transcript;
-                    speechValue = event.results[i][0].transcript.trim();
-
-                    appendTranscript(speechValue, false);
-
-                    switch (flowStatus)
-                    {
-                        case 0: // identify student number
-                            studentNumber = speechValue;
-                            if (!isTalking)
-                            {
-                                isTalking = true;
-                            }
-                            isTalking = false;
-
-                            if (!isTalking)
-                            {
-                                isTalking = true;
-                                utterSpeech ('Please state your name', defaultVoice, true);
-                            }
-
-                            isTalking = false;
-
-                            setFlowStatus(1);
-
-                            speechProcessed = true;
-
-                            break;
-
-                        case 1: // identify student name
-                            studentName = speechValue;
-
-                            //Set up AJAX request
-                            var xhttp = new XMLHttpRequest();
-                            xhttp.open("GET", "checkStudent?studentNumber=" + studentNumber
-                                + "&studentName=" + studentName, true);
-                            xhttp.send();
-
-                            xhttp.onreadystatechange=(e)=>
-                            {
-                                if ((xhttp.readyState == 4) && (xhttp.status == 200))
-                                {
-                                    var resp = xhttp.responseText;
-                                    if (resp == "false")
-                                    {
-                                        sessionStorage.setItem('studentNumber', '');
-                                        utterSpeech('Please identify yourself again.', defaultVoice, true);
-                                        setFlowStatus (0);
-                                    }
-                                    else if (resp == "true")
-                                    {
-                                        sessionStorage.setItem('studentNumber', studentNumber);
-
-                                        // Greet student according to the time of day
-                                        var nowHour = new Date().getHours();
-                                        var greetStu = "";
-                                        if (nowHour < 12)
-                                        {
-                                            greetStu = "Good morning ";
-                                        }
-                                        else
-                                            if ((nowHour >= 12) && (nowHour < 18))
-                                            {
-                                                greetStu = "Good afternoon ";
-                                            }
-                                            else
-                                                if (nowHour >= 18)
-                                                {
-                                                    greetStu = "Good evening ";
+                                            xhttp.onreadystatechange=(e)=>{
+                                                var resp = xhttp.responseText;
+                                                if (resp == "true") {
+                                                    sessionStorage.setItem('playerName', userName);
+                                                    document.getElementById("responseText").innerText = "Login successful."
+                                                } else if (resp == "false") {
+                                                    sessionStorage.setItem('playerName', '');
+                                                    document.getElementById("responseText").innerText = "Login unsuccessful."
+                                                    document.getElementById("loginUserName").value = "";
+                                                    document.getElementById("loginPassword").value = "";
                                                 }
-
-                                        utterSpeech(greetStu + studentName + ". How may I help you?", defaultVoice, true);
-                                        setFlowStatus (2);
-                                        //Reset current mood value
-                                        setNextMood(true);
-                                    }
-                                }
-                            }
-
-                            speechProcessed = true;
-
-                            break;
-
-                        case 2: // identify student request
-                            studentRequest = speechValue;
-
-                            if ((studentRequest.toLowerCase().includes("when")) || (studentRequest.toLowerCase().includes("next")))
-                            {
-                                if (studentRequest.toLowerCase().includes("lecture"))
-                                //Student wants to know when their next lecture is
-                                {
-                                    //Reset current mood value
-                                    setNextMood(true);
-
-                                    //Set up AJAX request
-                                    var xhttp = new XMLHttpRequest();
-                                    xhttp.open("GET", "nextLecture?studentNumber=" + studentNumber, true);
-                                    xhttp.send();
-
-                                    xhttp.onreadystatechange=(e)=>
-                                    {
-                                        if ((xhttp.readyState == 4) && (xhttp.status == 200))
-                                        {
-                                            var resp = xhttp.responseText;
-                                            setFlowStatus (2);
-                                            if (resp.valueOf().length > 1)
-                                            {
-                                                sessionStorage.setItem('response', resp);
-                                                utterSpeech(resp + ' ' + requestContinuation, defaultVoice, true);
                                             }
                                         }
                                     }
+                                </script>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button id="btnSignOut" class="btn btn-info">Sign Out <i class="fas fa-sign-in ml-1"></i></button>
+                            <script>
+                                document.getElementById("btnSignOut").addEventListener("click", fnSignOut);
+
+                                function fnSignOut() {
+                                    sessionStorage.setItem ('playerName', '');
+                                    document.getElementById("responseText").innerText = "Signed out."
                                 }
-                                else if (studentRequest.toLowerCase().includes("assignment"))
-                                //Student wants to know when their next assignment deadline is
-                                {
-                                    //Reset current mood value
-                                    setNextMood(true);
+                            </script>
+                        </div>
 
-                                    //Set up AJAX request
-                                    var xhttp = new XMLHttpRequest();
-                                    xhttp.open("GET", "nextAssignmentDeadline?studentNumber=" + studentNumber + "&moduleName=all", true);
-                                    xhttp.send();
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
 
-                                    xhttp.onreadystatechange=(e)=>
-                                    {
-                                        if ((xhttp.readyState == 4) && (xhttp.status == 200))
-                                        {
-                                            var resp = xhttp.responseText;
-                                            setFlowStatus (2);
-                                            if (resp.valueOf().length > 1)
-                                            {
-                                                sessionStorage.setItem('response', resp);
-                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice, true);
+                    </div>
+
+                    <!-- Register -->
+                    <div class="tab-pane fade" id="registerPanel" role="tabpanel">
+
+                        <div class="modal-body">
+
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="regUserName">Username</label>
+                                <input type="text" id="regUserName" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="regEmail">Email</label>
+                                <input type="email" required id="regEmail"
+                                       class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-5">
+                                <label data-error="wrong" data-success="right" for="regPassword">Password</label>
+                                <i class="fas fa-lock prefix"></i>
+                                <input type="password" id="regPassword" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label data-error="wrong" data-success="right" for="regPassword2">Repeat password</label>
+                                <i class="fas fa-lock prefix"></i>
+                                <input type="password" id="regPassword2" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseTextReg" data-error="wrong" data-success="right"></label>
+                            </div>
+
+                            <div class="text-center form-sm mt-2">
+                                <button id="btnRegister" class="btn btn-info">Register <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnRegister").addEventListener("click", fnRegister);
+
+                                    function fnRegister () {
+                                        var userName = document.getElementById("regUserName").value;
+                                        var userEmail = document.getElementById("regEmail").value;
+                                        var userPassword = document.getElementById("regPassword").value;
+                                        var userPassword2 = document.getElementById("regPassword2").value;
+
+                                        if (userName.length <= 4 || userPassword.length <= 4) {
+                                            document.getElementById("responseTextReg").innerText =
+                                                "Username and Password must be more than 4 characters long!";
+                                            document.getElementById("regUserName").value = "";
+                                            document.getElementById("regEmail").value = "";
+                                            document.getElementById("regPassword").value = "";
+                                            document.getElementById("regPassword2").value = "";
+                                        } else if (userPassword != userPassword2) {
+                                            document.getElementById("responseTextReg").innerText =
+                                                "Passwords do not match!";
+                                            document.getElementById("regUserName").value = "";
+                                            document.getElementById("regEmail").value = "";
+                                            document.getElementById("regPassword").value = "";
+                                            document.getElementById("regPassword2").value = "";
+                                        } else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(userEmail)) { //Validate the Email address
+                                            document.getElementById("responseTextReg").innerText = "Please enter a valid email address."
+                                            document.getElementById("regEmail").value = "";
+                                        } else {
+                                            //Set up AJAX request
+                                            var xhttp = new XMLHttpRequest();
+                                            xhttp.open("GET", "register?playerName=" + userName +
+                                                "&playerEmail=" + userEmail +
+                                                "&playerPassword=" + userPassword, true); //false==sync
+                                            xhttp.send();
+
+                                            xhttp.onreadystatechange=(e)=>{
+                                                var resp = xhttp.responseText;
+                                                if (resp == "true") {
+                                                    document.getElementById("responseTextReg").innerText = "Registration successful."
+                                                } else {
+                                                    document.getElementById("responseTextReg").innerText = "Registration unsuccessful."
+                                                    document.getElementById("regUserName").value = "";
+                                                    document.getElementById("regEmail").value = "";
+                                                    document.getElementById("regPassword").value = "";
+                                                    document.getElementById("regPassword2").value = "";
+                                                }
                                             }
                                         }
                                     }
-                                }
-                                else // Request was not recognised
-                                {
-                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice, true);
-                                    setNextMood(false);
-                                }
-                            }
-                            else if (studentRequest.toLowerCase().includes("where"))
-                            {
-                                if ((studentRequest.toLowerCase().includes("lecture")) || (studentRequest.toLowerCase().includes("room")))
-                                //Student wants to know where their next lecture is being held
-                                {
-                                    //Reset current mood value
-                                    setNextMood(true);
+                                </script>
+                            </div>
 
-                                    //Set up AJAX request
-                                    var xhttp = new XMLHttpRequest();
-                                    xhttp.open("GET", "nextLectureRoom?studentNumber=" + studentNumber, true);
-                                    xhttp.send();
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
 
-                                    xhttp.onreadystatechange=(e)=>
-                                    {
-                                        if ((xhttp.readyState == 4) && (xhttp.status == 200))
-                                        {
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Login/Register Form -->
+
+<!-- Add new User Form -->
+<div class="modal fade" id="modalAddUserForm" tabindex="-1" role="dialog" aria-labelledby="modalAddUserForm" aria-hidden="true">
+    <div class="modal-dialog cascading-modal" role="document">
+        <!--Content-->
+        <div class="modal-content">
+
+            <!-- Modal cascading tabs -->
+            <div class="modal-c-tabs">
+
+                <!-- Navigation tabs (Add New Post) -->
+                <ul class="nav nav-tabs md-tabs tabs-2 light-blue darken-3" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#addNewUserPanel" role="tab"><i class="fas fa-user mr-1"></i>
+                            Add New User
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#searchUsersPanel" role="tab"><i class="fas fa-user-plus mr-1"></i>
+                            Search Users</a>
+                    </li>
+                </ul>
+
+                <!-- Add New User and Search Users Panels -->
+                <div class="tab-content">
+                    <!-- Add new Post -->
+                    <div class="tab-pane fade in show active" id="addNewUserPanel" role="tabpanel">
+
+                        <!-- Form body -->
+                        <div class="modal-body mb-1">
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="userDetails">User Details</label>
+                                <input type="text" id="userDetails" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseTextAddUser" data-error="wrong" data-success="right"></label>
+                            </div>
+
+                            <div class="text-center mt-2">
+                                <button id="btnAddNewUser" class="btn btn-info">Add new User <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnAddNewUser").addEventListener("click", fnAddNewUser);
+
+                                    function fnAddNewUser () {
+
+                                        document.getElementById("responseTextAddUser").innerText = "";
+
+                                        let userDetails = document.getElementById("userDetails").value;
+
+                                        //Set up AJAX request
+                                        let xhttp = new XMLHttpRequest();
+                                        xhttp.open("GET", "AddNewUser?UserDetails=" + userDetails, true); //false==sync
+                                        xhttp.send();
+
+                                        xhttp.onreadystatechange=(e)=>{
                                             var resp = xhttp.responseText;
-                                            setFlowStatus (2);
-                                            if (resp.valueOf().length > 1)
-                                            {
-                                                sessionStorage.setItem('response', resp);
-                                                utterSpeech(resp + '. ' + requestContinuation, defaultVoice, true);
+                                            if (resp != "false") {
+                                                document.getElementById("responseTextAddUser").innerText =
+                                                    "User has been added successfully.";
+                                                document.getElementById("userDetails").value = "";
+
+                                            } else if (resp == "false") {
+                                                document.getElementById("responseText").innerText =
+                                                    "Something went wrong. User was not inserted.";
                                             }
                                         }
                                     }
-                                }
-                                else // Request was not recognised
-                                {
-                                    utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice, true);
-                                    setNextMood(false);
-                                }
-                            }
-                            else if (((studentRequest.toLowerCase().includes("thank"))
-                                && (studentRequest.toLowerCase().includes("you")))
-                                || (studentRequest.toLowerCase().includes("no")))
-                            {
-                                //Reset current mood value
-                                setNextMood(true);
-                                utterSpeech("You're welcome.", defaultVoice, true);
+                                </script>
+                            </div>
 
-                                //Reset session values and variables and clear the transcript
-                                sessionStorage.setItem('studentNumber', '');
-                                studentNumber = "";
-                                studentName = "";
-                                clearTranscript();
-                                setFlowStatus(0);
+                        </div>
 
-                                btnMike();
-                            }
-                            else // Request was not recognised
-                            {
-                                utterSpeech(moodReplyMisunderstood[currentMood], defaultVoice, true);
-                                setNextMood(false);
-                            }
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
 
-                            speechProcessed = true;
+                    </div>
 
-                            break;
+                    <!-- Search Users -->
+                    <div class="tab-pane fade" id="searchUsersPanel" role="tabpanel">
 
-                        default:
-                    }
+                        <div class="modal-body">
 
-                    full_transcript += final_transcript + "<br>" + auto_reply;
-                    //speech_reply.innerHTML = full_transcript;
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="searchText">
+                                    Search Text (leave blank to retrieve all users)</label>
+                                <input type="text" id="searchText" class="form-control form-control-sm validate">
+                            </div>
 
-                    speechValue = '';
-                    auto_reply = '';
-                    final_transcript = '';
-                }
-                else
-                {
-                    interim_transcript += event.results[i][0].transcript;
-                }
-            }
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseTextSearchUsers" data-error="wrong" data-success="right"></label>
+                            </div>
 
-            final_transcript = capitalise(final_transcript);
-            final_span.innerHTML = linebreak(final_transcript);
-            current_span.innerHTML = linebreak(interim_transcript);
-        };
-    }
+                            <div class="text-center form-sm mt-2">
+                                <button id="btnSearchUsers" class="btn btn-info">Search Users <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnSearchUsers").addEventListener("click", fnSearchUsers);
 
-    function upgrade() 
-    {
-        mike_button.style.visibility = 'hidden';
-        displayStuff('info_upgrade');
-    }
+                                    function fnSearchUsers () {
+                                        var searchText = document.getElementById("searchText").value;
 
-    function btnMike(event)
-    {
+                                        //Initialise AJAX request
+                                        var xhttp = new XMLHttpRequest();
 
-        if (recognizing) 
-        {
-            recognition.stop();
-            return;
-        }
+                                        if (searchText.trim().length == 0) { //Retrieve all users
+                                            searchText = "";
+                                        }
 
-        studentRecognised = false;
+                                        //Set up AJAX request
+                                        xhttp.open("GET", "SearchUser?UserDetails=" + searchText, true); //false==sync
+                                        xhttp.send();
 
-        //identify student number
-        if (flowStatus != 2)
-        {
-            utterSpeech(welcomeStatement, defaultVoice, true);
-            utterSpeech (requestStudentNumber, defaultVoice, true);
-        }
-        else
-        {
-            if (studentName.trim().length > 0)
-            {
-                utterSpeech ('Hi ' + studentName + '. How may I help you?', defaultVoice, true);
-                setFlowStatus (2);
-                //Reset current mood value
-                setNextMood(true);
-            }
-            else
-            {
-                setFlowStatus(0);
-                setNextMood(true);
-            }
-        }
+                                        xhttp.onreadystatechange = function () {
 
-        final_transcript = '';
-        recognition.language = language;
-        recognition.start();
+                                            //if (this.readyState == 4 && this.status == 200) {
+                                            if (this.readyState == 4 && this.status == 200) {
 
-        ignore_onend = false;
+                                                var postObj = JSON.parse(this.responseText);
 
-        document.getElementById('final_span').innerHTML = '';
-        document.getElementById('current_span').innerHTML = '';
-        mike_img.src = 'images/mic-slash.gif';
-        displayStuff('info_allow');
-        start_timestamp = event.timeStamp;
+                                                var dataHTMLStr = "<p>";
+                                                for (var key in postObj) {
+                                                    dataHTMLStr += "<br>";
+                                                    dataHTMLStr += "User ID     : " + postObj[key].UserID + "<br>";
+                                                    dataHTMLStr += "User Details: " + postObj[key].UserDetails + "<br>";
+                                                }
+                                                dataHTMLStr += "</p>";
+                                                document.getElementById("responseTextSearchUsers").innerHTML = dataHTMLStr;
+                                            }
+                                        }
+                                    }
+                                    //}
+                                </script>
+                            </div>
 
-    }
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
 
-    function displayStuff(s)
-    {
-        if (s) 
-        {
-            for (var child = info.firstChild; child; child = child.nextSibling) 
-            {
-                if (child.style) 
-                {
-                    child.style.display = child.id == s ? 'inline' : 'none';
-                }
-            }
-            info.style.visibility = 'visible';
-        } 
-        else 
-        {
-            info.style.visibility = 'hidden';
-        }
-    }
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal: Add new Post form -->
 
-</script>
+
+<div class="text-center">
+    <a href="" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalLRForm">Launch
+        Modal LogIn/Register</a>
+</div>
+
+</body>
+
+</html>

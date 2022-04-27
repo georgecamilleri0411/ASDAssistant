@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>ASD Assistant</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+
+    <!-- Bootstrap stuff -->
+    <link rel="stylesheet" href="stylesheets/bootstrap-3.3.7/dist/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="stylesheets/bootstrap-3.3.7/docs/assets/js/vendor/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="stylesheets/bootstrap-3.3.7/docs/dist/js/bootstrap.min.js"></script>
+    <!-- End of Bootstrap stuff -->
+
+    <!-- My custom CSS -->
+    <link rel="stylesheet" href="stylesheets/style.css">
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse" id="my-nav-bar">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <a class="navbar-brand" href="">Home</a>
+
+        </div>
+
+        <div class="collapse navbar-collapse" id="myNavbar">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="" id="btnAddUser" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalAddUserForm">Add User</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="" id="btnAddContact" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalAddUserForm">Add Contact</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="" id="btnAddNotificationDetails" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalAddUserForm">Add Notification Details</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- User Login/Registration Form -->
+<div class="modal fade" id="modalLRForm" tabindex="-1" role="dialog" aria-labelledby="modalLRForm" aria-hidden="true">
+    <div class="modal-dialog cascading-modal" role="document">
+        <!--Content-->
+        <div class="modal-content">
+
+            <!-- Modal cascading tabs -->
+            <div class="modal-c-tabs">
+
+                <!-- Navigation tabs (Login/Register) -->
+                <ul class="nav nav-tabs md-tabs tabs-2 light-blue darken-3" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#loginPanel" role="tab"><i class="fas fa-user mr-1"></i>
+                            Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#registerPanel" role="tab"><i class="fas fa-user-plus mr-1"></i>
+                            Register</a>
+                    </li>
+                </ul>
+
+                <!-- Login/Register Panels -->
+                <div class="tab-content">
+                    <!-- Log In -->
+                    <div class="tab-pane fade in show active" id="loginPanel" role="tabpanel">
+
+                        <!-- Form body -->
+                        <div class="modal-body mb-1">
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="loginUserName">Username</label>
+                                <input type="text" id="loginUserName" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <i class="fas fa-lock prefix"></i>
+                                <label data-error="wrong" data-success="right" for="loginPassword">Password</label>
+                                <input type="password" id="loginPassword" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseText" data-error="wrong" data-success="right"></label>
+                            </div>
+
+                            <div class="text-center mt-2">
+                                <button id="btnLogIn" class="btn btn-info">Log in <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnLogIn").addEventListener("click", fnLogIn);
+
+                                    function fnLogIn () {
+                                        var userName = document.getElementById("loginUserName").value;
+                                        var userPassword = document.getElementById("loginPassword").value;
+
+                                        if (userName.length <= 4 || userPassword.length <= 4) {
+                                            document.getElementById("responseText").innerText =
+                                                "Username and Password must be more than 4 characters long!";
+                                            document.getElementById("loginUserName").value = "";
+                                            document.getElementById("loginPassword").value = "";
+                                        } else {
+                                            //Set up AJAX request
+                                            var xhttp = new XMLHttpRequest();
+                                            xhttp.open("GET", "login?playerName=" + userName
+                                                + "&playerPassword=" + userPassword, true); //false==sync
+                                            xhttp.send();
+
+                                            xhttp.onreadystatechange=(e)=>{
+                                                var resp = xhttp.responseText;
+                                                if (resp == "true") {
+                                                    sessionStorage.setItem('playerName', userName);
+                                                    document.getElementById("responseText").innerText = "Login successful."
+                                                } else if (resp == "false") {
+                                                    sessionStorage.setItem('playerName', '');
+                                                    document.getElementById("responseText").innerText = "Login unsuccessful."
+                                                    document.getElementById("loginUserName").value = "";
+                                                    document.getElementById("loginPassword").value = "";
+                                                }
+                                            }
+                                        }
+                                    }
+                                </script>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button id="btnSignOut" class="btn btn-info">Sign Out <i class="fas fa-sign-in ml-1"></i></button>
+                            <script>
+                                document.getElementById("btnSignOut").addEventListener("click", fnSignOut);
+
+                                function fnSignOut() {
+                                    sessionStorage.setItem ('playerName', '');
+                                    document.getElementById("responseText").innerText = "Signed out."
+                                }
+                            </script>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
+
+                    </div>
+
+                    <!-- Register -->
+                    <div class="tab-pane fade" id="registerPanel" role="tabpanel">
+
+                        <div class="modal-body">
+
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="regUserName">Username</label>
+                                <input type="text" id="regUserName" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="regEmail">Email</label>
+                                <input type="email" required id="regEmail"
+                                       class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-5">
+                                <label data-error="wrong" data-success="right" for="regPassword">Password</label>
+                                <i class="fas fa-lock prefix"></i>
+                                <input type="password" id="regPassword" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label data-error="wrong" data-success="right" for="regPassword2">Repeat password</label>
+                                <i class="fas fa-lock prefix"></i>
+                                <input type="password" id="regPassword2" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseTextReg" data-error="wrong" data-success="right"></label>
+                            </div>
+
+                            <div class="text-center form-sm mt-2">
+                                <button id="btnRegister" class="btn btn-info">Register <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnRegister").addEventListener("click", fnRegister);
+
+                                    function fnRegister () {
+                                        var userName = document.getElementById("regUserName").value;
+                                        var userEmail = document.getElementById("regEmail").value;
+                                        var userPassword = document.getElementById("regPassword").value;
+                                        var userPassword2 = document.getElementById("regPassword2").value;
+
+                                        if (userName.length <= 4 || userPassword.length <= 4) {
+                                            document.getElementById("responseTextReg").innerText =
+                                                "Username and Password must be more than 4 characters long!";
+                                            document.getElementById("regUserName").value = "";
+                                            document.getElementById("regEmail").value = "";
+                                            document.getElementById("regPassword").value = "";
+                                            document.getElementById("regPassword2").value = "";
+                                        } else if (userPassword != userPassword2) {
+                                            document.getElementById("responseTextReg").innerText =
+                                                "Passwords do not match!";
+                                            document.getElementById("regUserName").value = "";
+                                            document.getElementById("regEmail").value = "";
+                                            document.getElementById("regPassword").value = "";
+                                            document.getElementById("regPassword2").value = "";
+                                        } else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(userEmail)) { //Validate the Email address
+                                            document.getElementById("responseTextReg").innerText = "Please enter a valid email address."
+                                            document.getElementById("regEmail").value = "";
+                                        } else {
+                                            //Set up AJAX request
+                                            var xhttp = new XMLHttpRequest();
+                                            xhttp.open("GET", "register?playerName=" + userName +
+                                                "&playerEmail=" + userEmail +
+                                                "&playerPassword=" + userPassword, true); //false==sync
+                                            xhttp.send();
+
+                                            xhttp.onreadystatechange=(e)=>{
+                                                var resp = xhttp.responseText;
+                                                if (resp == "true") {
+                                                    document.getElementById("responseTextReg").innerText = "Registration successful."
+                                                } else {
+                                                    document.getElementById("responseTextReg").innerText = "Registration unsuccessful."
+                                                    document.getElementById("regUserName").value = "";
+                                                    document.getElementById("regEmail").value = "";
+                                                    document.getElementById("regPassword").value = "";
+                                                    document.getElementById("regPassword2").value = "";
+                                                }
+                                            }
+                                        }
+                                    }
+                                </script>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Login/Register Form -->
+
+<!-- Add new User Form -->
+<div class="modal fade" id="modalAddUserForm" tabindex="-1" role="dialog" aria-labelledby="modalAddUserForm" aria-hidden="true">
+    <div class="modal-dialog cascading-modal" role="document">
+        <!--Content-->
+        <div class="modal-content">
+
+            <!-- Modal cascading tabs -->
+            <div class="modal-c-tabs">
+
+                <!-- Navigation tabs (Add New Post) -->
+                <ul class="nav nav-tabs md-tabs tabs-2 light-blue darken-3" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#addNewUserPanel" role="tab"><i class="fas fa-user mr-1"></i>
+                            Add New User
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#searchUsersPanel" role="tab"><i class="fas fa-user-plus mr-1"></i>
+                            Search Users</a>
+                    </li>
+                </ul>
+
+                <!-- Add New User and Search Users Panels -->
+                <div class="tab-content">
+                    <!-- Add new Post -->
+                    <div class="tab-pane fade in show active" id="addNewUserPanel" role="tabpanel">
+
+                        <!-- Form body -->
+                        <div class="modal-body mb-1">
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="userDetails">User Details</label>
+                                <input type="text" id="userDetails" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseTextAddUser" data-error="wrong" data-success="right"></label>
+                            </div>
+
+                            <div class="text-center mt-2">
+                                <button id="btnAddNewUser" class="btn btn-info">Add new Comment <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnAddNewUser").addEventListener("click", fnAddNewUser);
+
+                                    function fnAddNewUser () {
+
+                                        document.getElementById("responseTextAddUser").innerText = "";
+
+                                        let userDetails = document.getElementById("userDetails").value;
+
+                                        //Set up AJAX request
+                                        let xhttp = new XMLHttpRequest();
+                                        xhttp.open("GET", "AddNewUser?UserDetails=" + userDetails //false==sync
+                                        xhttp.send();
+
+                                        xhttp.onreadystatechange=(e)=>{
+                                            var resp = xhttp.responseText;
+                                            if (resp != "false") {
+                                                document.getElementById("responseTextAddUser").innerText =
+                                                    "User has been added successfully.";
+                                                document.getElementById("userDetails").value = "";
+
+                                            } else if (resp == "false") {
+                                                document.getElementById("responseText").innerText =
+                                                    "Something went wrong. User not inserted.";
+                                            }
+                                        }
+                                    }
+                                </script>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
+
+                    </div>
+
+                    <!-- Search Users -->
+                    <div class="tab-pane fade" id="searchUsersPanel" role="tabpanel">
+
+                        <div class="modal-body">
+
+                            <div class="md-form form-sm mb-5">
+                                <i class="fas fa-envelope prefix"></i>
+                                <label data-error="wrong" data-success="right" for="searchText">
+                                    Search Text (leave blank to retrieve all users)</label>
+                                <input type="text" id="searchText" class="form-control form-control-sm validate">
+                            </div>
+
+                            <div class="md-form form-sm mb-4">
+                                <label id="responseTextSearchPosts" data-error="wrong" data-success="right"></label>
+                            </div>
+
+                            <div class="text-center form-sm mt-2">
+                                <button id="btnSearchUsers" class="btn btn-info">Search Users <i class="fas fa-sign-in ml-1"></i></button>
+                                <script>
+                                    document.getElementById("btnSearchUsers").addEventListener("click", fnSearchUsers);
+
+                                    function fnSearchUsers () {
+                                        var searchText = document.getElementById("searchText").value;
+
+                                        //Initialise AJAX request
+                                        var xhttp = new XMLHttpRequest();
+
+                                        if (searchText.trim().length == 0) { //Retrieve all users
+                                            searchText = "";
+                                        }
+
+                                        //Set up AJAX request
+                                        xhttp.open("GET", "SearchUser?searchText=" + searchText, true); //false==sync
+                                        xhttp.send();
+
+                                        xhttp.onreadystatechange = function () {
+
+                                            //if (this.readyState == 4 && this.status == 200) {
+                                            if (this.readyState == 4 && this.status == 200) {
+
+                                                var postObj = JSON.parse(this.responseText);
+
+                                                var dataHTMLStr = "<p>";
+                                                for (var key in postObj) {
+                                                    dataHTMLStr += "<br>";
+                                                    dataHTMLStr += "Posted by: " + postObj[key].PlayerName + "<br>";
+                                                    dataHTMLStr += "Title    : " + postObj[key].userDetails + "<br>";
+                                                    dataHTMLStr += "Comment  : " + postObj[key].PostComment + "<br>";
+                                                }
+                                                dataHTMLStr += "</p>";
+                                                document.getElementById("responseTextSearchPosts").innerHTML = dataHTMLStr;
+                                            }
+                                        }
+                                    }
+                                    //}
+                                </script>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal: Add new Post form -->
+
+
+<div class="text-center">
+    <a href="" class="btn btn-default btn-rounded my-3" data-toggle="modal" data-target="#modalLRForm">Launch
+        Modal LogIn/Register</a>
+</div>
+
+</body>
+
+</html>
